@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Cargo</title>
+</head>
+
+<body>
+    <div id="game">
+        <canvas id="screen" width="600" height="600"></canvas>
+    </div>
+
+    <script>
+        const stations = [];
+        function drawCircle(ctx, x, y, radius, color) {
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, 2 * Math.PI);
+            ctx.fillStyle = color;
+            ctx.fill();
+        }
+
+        function renderStation(ctx, radius, angle, color) {
+            // Consider the origin of the circle as the center of the canvas
+            const ox = ctx.canvas.width / 2;
+            const oy = ctx.canvas.height / 2;
+            const x = ox + radius * Math.cos(angle);
+            const y = oy + radius * Math.sin(angle);
+
+            // Draw a a circle at the calculated position
+            drawCircle(ctx, x, y, 10, color);
+
+            stations.push({ x, y, radius, angle, color });
+        }
+
+        const gameElement = document.getElementById('game');
+        gameElement.clientHeight = window.clientWidth;
+        const canvas = document.getElementById('screen');
+        canvas.width = gameElement.clientWidth;
+        canvas.height = gameElement.clientHeight;
+
+        const ctx = canvas.getContext('2d');
+
+        function renderOrbitStations(ctx, radius) {
+            let stationCount = Math.random() * 10;
+            for (let i = 0; i < stationCount; i++) {
+                renderStation(ctx, radius, Math.random() * 2 * Math.PI, 'red');
+            }
+        }
+
+        // Draw a circle at center of the canvas
+        drawCircle(ctx, canvas.width / 2, canvas.height / 2, 50, 'blue');
+        
+        let orbitCount = Math.random() * 10;
+        for (let i = 0; i < orbitCount; i++) {
+            const halfWidth = canvas.width / 2;
+            const offset = 100;
+            let orbitRadius = Math.random() * (halfWidth - offset) + offset;
+            renderOrbitStations(ctx, orbitRadius);
+        }
+
+        // 1. start with first station
+        // 2. if it has the `processed` property set to true, skip it.
+        // 3. otherwise, draw a line from it to the nearest station.
+        // 4. set the `processed` property to true for processed station;
+        // 5. repeat steps 2-4 using the nearest station as the starting point.
+        // 6. repeat until all stations have been processed.
+
+        function findNearestStation(station, stations) {
+            let nearestStation = null;
+            let nearestDistance = Infinity;
+            for (let i = 0; i < stations.length; i++) {
+                const otherStation = stations[i];
+                if (otherStation.processed) {
+                    continue;
+                }
+
+                const dx = station.x - otherStation.x;
+                const dy = station.y - otherStation.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < nearestDistance) {
+                    nearestDistance = distance;
+                    nearestStation = otherStation;
+                }
+            }
+
+            return nearestStation;
+        }
+
+        function drawLine(ctx, from, to) {
+            ctx.beginPath();
+            ctx.moveTo(from.x, from.y);
+            ctx.lineTo(to.x, to.y);
+            ctx.strokeStyle = 'green';
+            ctx.stroke();
+        }
+
+        function connectStations(ctx, stations) {
+            let currentStation = stations[0];
+            currentStation.processed = true;
+            let nextStation = findNearestStation(currentStation, stations);
+            while (nextStation) {
+                drawLine(ctx, currentStation, nextStation);
+                currentStation = nextStation;
+                currentStation.processed = true;
+                nextStation = findNearestStation(currentStation, stations);
+            }
+        }
+
+        connectStations(ctx, stations);
+
+    </script>
+</body>
+
+</html>
