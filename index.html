@@ -62,8 +62,11 @@
                     stationIndex++;
                 }
                 const angle = Math.random() * 2 * Math.PI;
-                const x = game.screen.offset.x + radius * Math.cos(angle);
-                const y = game.screen.offset.y + radius * Math.sin(angle);
+
+                const jitter = Math.random() * 25 - 50;
+
+                const x = game.screen.offset.x + (radius + jitter) * Math.cos(angle);
+                const y = game.screen.offset.y + (radius + jitter) * Math.sin(angle);
 
                 const minDistance = 20;
                 // Check if the stations is far enough from other stations
