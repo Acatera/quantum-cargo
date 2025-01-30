@@ -5,6 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quantum Cargo</title>
+    <style>
+        body {
+            background-color: #111;
+        }
+    </style>
 </head>
 
 <body>
@@ -21,44 +26,136 @@
             ctx.fill();
         }
 
-        function renderStation(ctx, radius, angle, color) {
-            // Consider the origin of the circle as the center of the canvas
-            const ox = ctx.canvas.width / 2;
-            const oy = ctx.canvas.height / 2;
-            const x = ox + radius * Math.cos(angle);
-            const y = oy + radius * Math.sin(angle);
-
-            // Draw a a circle at the calculated position
-            drawCircle(ctx, x, y, 10, color);
-
-            stations.push({ x, y, radius, angle, color });
-        }
-
         const gameElement = document.getElementById('game');
-        gameElement.clientHeight = window.clientWidth;
+        gameElement.clientHeight = window.innerHeight;
         const canvas = document.getElementById('screen');
         canvas.width = gameElement.clientWidth;
         canvas.height = gameElement.clientHeight;
 
         const ctx = canvas.getContext('2d');
 
-        function renderOrbitStations(ctx, radius) {
-            let stationCount = Math.random() * 10;
-            for (let i = 0; i < stationCount; i++) {
-                renderStation(ctx, radius, Math.random() * 2 * Math.PI, 'red');
+        // Draw a circle at center of the canvas
+        // drawCircle(ctx, canvas.width / 2, canvas.height / 2, 50, 'blue');
+        function generateStations() {
+            let orbitCount = Math.random() * 4 + 2;
+            for (let i = 0; i < orbitCount; i++) {
+                const maxDistance = canvas.width / 2 - 75;
+                const offset = 100;
+                let orbitRadius = Math.random() * (maxDistance - offset) + offset;
+                // Render a circle with radius equal to orbitRadius
+                generateOrbitStations(orbitRadius);
             }
         }
 
-        // Draw a circle at center of the canvas
-        drawCircle(ctx, canvas.width / 2, canvas.height / 2, 50, 'blue');
-        
-        let orbitCount = Math.random() * 10;
-        for (let i = 0; i < orbitCount; i++) {
-            const halfWidth = canvas.width / 2;
-            const offset = 100;
-            let orbitRadius = Math.random() * (halfWidth - offset) + offset;
-            renderOrbitStations(ctx, orbitRadius);
+        function generateOrbitStations(radius) {
+            let stationCount = Math.random() * 4 + 2;
+            let stationIndex = 0;
+            let tries = 0;
+            while (stationIndex < stationCount) {
+                if (tries > 10) {
+                    stationIndex++;
+                }
+                const angle = Math.random() * 2 * Math.PI;
+                const ox = ctx.canvas.width / 2;
+                const oy = ctx.canvas.height / 2;
+                const x = ox + radius * Math.cos(angle);
+                const y = oy + radius * Math.sin(angle);
+
+                const minDistance = 20;
+                // Check if the stations is far enough from other stations
+                let isFarEnough = true;
+                for (let i = 0; i < stations.length; i++) {
+                    const dx = stations[i].x - x;
+                    const dy = stations[i].y - y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < minDistance) {
+                        isFarEnough = false;
+                        tries++;
+                        break;
+                    }
+                }
+
+                if (!isFarEnough) {
+                    continue;
+                }
+
+                stations.push({
+                    x: x,
+                    y: y,
+                    name: generateSpaceStationName(),
+                    radius: 6,
+                    color: '#aa4c00',
+                    processed: false
+                });
+
+                stationIndex++;
+            }
         }
+
+        function generateSpaceStationName() {
+            const prefixes = [
+                "Lunar", "Neptune", "Vega", "Orion", "Apollo", "Ares", "Zeus",
+                "Quantum", "Nova", "Sol", "Astro", "Titan", "Cosmo", "Celestial"
+            ];
+
+            const coreNames = [
+                "Echo", "Prometheus", "Zenith", "Pioneer", "Horizon", "Eclipse",
+                "Sentinel", "Oasis", "Halcyon", "Odyssey", "Vanguard", "Nebula",
+                "Hyperion", "Exodus", "Genesis", "Oblivion"
+            ];
+
+            const suffixes = [
+                "Station", "Outpost", "Base", "Hub", "Dock", "Port",
+                "Lab", "Observatory", "Array", "Fort", "Bastion", "Forge",
+                "Citadel", "Colony", "Waypoint"
+            ];
+
+            // Generate a random number for potential serial usage
+            const serial = Math.floor(Math.random() * 100) + 1;
+
+            // Randomly select components
+            const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+            const core = coreNames[Math.floor(Math.random() * coreNames.length)];
+            const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
+
+            // Decide whether to add a serial number (50% chance)
+            const includeSerial = Math.random() > 0.5;
+
+            return includeSerial ? `${prefix} ${core} ${suffix}-${serial}` : `${prefix} ${core} ${suffix}`;
+        }
+
+        function renderStations() {
+            // connectStations(ctx, stations);
+
+            for (let i = 0; i < stations.length; i++) {
+                if (stations[i].hovered) {
+                    drawCircle(ctx, stations[i].x, stations[i].y, stations[i].radius + 4, 'red');
+                }
+
+                if (stations[i].selected) {
+                    drawCircle(ctx, stations[i].x, stations[i].y, stations[i].radius + 4, 'blue');
+                }
+                drawCircle(ctx, stations[i].x, stations[i].y, stations[i].radius, stations[i].color);
+            }
+
+            revertProcessingMark(stations);
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            renderStations();
+            renderUI();
+
+            requestAnimationFrame(render);
+        }
+
+        function revertProcessingMark(stations) {
+            for (let i = 0; i < stations.length; i++) {
+                stations[i].processed = false;
+            }
+        }
+
 
         // 1. start with first station
         // 2. if it has the `processed` property set to true, skip it.
@@ -91,6 +188,8 @@
         function drawLine(ctx, from, to) {
             ctx.beginPath();
             ctx.moveTo(from.x, from.y);
+            // Thickness of the line
+            ctx.lineWidth = 4;
             ctx.lineTo(to.x, to.y);
             ctx.strokeStyle = 'green';
             ctx.stroke();
@@ -108,7 +207,77 @@
             }
         }
 
-        connectStations(ctx, stations);
+        // When mouse moves over a station, highlight it and show its name
+        // When mouse moves out of a station, remove the highlight and hide the name
+        // end
+        document.getElementById('screen').addEventListener('mousemove', function (event) {
+            for (let i = 0; i < stations.length; i++) {
+                stations[i].hovered = false;
+            }
+
+
+            const x = event.clientX;
+            const y = event.clientY;
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = x - rect.left;
+            const mouseY = y - rect.top;
+
+            for (let i = 0; i < stations.length; i++) {
+                const station = stations[i];
+                const dx = mouseX - station.x;
+                const dy = mouseY - station.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < station.radius) {
+                    station.hovered = true;
+                    break;
+                }
+            }
+        });
+
+        // When a station is clicked, mark it as selected
+        document.getElementById('screen').addEventListener('click', function (event) {
+            for (let i = 0; i < stations.length; i++) {
+                stations[i].selected = false;
+            }
+
+            const x = event.clientX;
+            const y = event.clientY;
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = x - rect.left;
+            const mouseY = y - rect.top;
+
+            for (let i = 0; i < stations.length; i++) {
+                const station = stations[i];
+                const dx = mouseX - station.x;
+                const dy = mouseY - station.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < station.radius) {
+                    station.selected = true;
+                    break;
+                }
+            }
+        });
+
+        function renderUI() {
+            let selectedStation = null;
+            for (let i = 0; i < stations.length; i++) {
+                if (stations[i].selected) {
+                    selectedStation = stations[i];
+                    break;
+                }
+            }
+
+            if (selectedStation) {
+                ctx.fillStyle = 'white';
+                ctx.font = '24px Arial';
+                ctx.fillText(selectedStation.name, 10, 30);
+            }
+        }
+
+
+        generateStations();
+
+        render();
 
     </script>
 </body>
