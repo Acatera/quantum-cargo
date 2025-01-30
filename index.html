@@ -18,6 +18,14 @@
     </div>
 
     <script>
+        const game = {
+            screen: {
+                offset: {
+                    x: 0,
+                    y: 0
+                },
+            }
+        }
         const stations = [];
         function drawCircle(ctx, x, y, radius, color) {
             ctx.beginPath();
@@ -34,8 +42,6 @@
 
         const ctx = canvas.getContext('2d');
 
-        // Draw a circle at center of the canvas
-        // drawCircle(ctx, canvas.width / 2, canvas.height / 2, 50, 'blue');
         function generateStations() {
             let orbitCount = Math.random() * 4 + 2;
             for (let i = 0; i < orbitCount; i++) {
@@ -56,10 +62,8 @@
                     stationIndex++;
                 }
                 const angle = Math.random() * 2 * Math.PI;
-                const ox = ctx.canvas.width / 2;
-                const oy = ctx.canvas.height / 2;
-                const x = ox + radius * Math.cos(angle);
-                const y = oy + radius * Math.sin(angle);
+                const x = game.screen.offset.x + radius * Math.cos(angle);
+                const y = game.screen.offset.y + radius * Math.sin(angle);
 
                 const minDistance = 20;
                 // Check if the stations is far enough from other stations
@@ -125,7 +129,7 @@
         }
 
         function renderStations() {
-            // connectStations(ctx, stations);
+            connectStations(ctx, stations);
 
             for (let i = 0; i < stations.length; i++) {
                 if (stations[i].hovered) {
@@ -271,9 +275,14 @@
                 ctx.fillStyle = 'white';
                 ctx.font = '24px Arial';
                 ctx.fillText(selectedStation.name, 10, 30);
+
+                ctx.font = '16px Arial';
+                ctx.fillText(`X: ${selectedStation.x.toFixed(2)}, Y: ${selectedStation.y.toFixed(2)}`, 10, 60);
             }
         }
 
+        game.screen.offset.x = ctx.canvas.width / 2;
+        game.screen.offset.y = ctx.canvas.height / 2;
 
         generateStations();
 
