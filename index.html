@@ -6,6 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quantum Cargo</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             background-color: #111;
         }
@@ -13,10 +19,7 @@
 </head>
 
 <body>
-    <div id="game">
-        <canvas id="screen" width="600" height="600"></canvas>
-    </div>
-
+    <canvas id="screen" style="display: block; width: 100vw; height: 100vh;"></canvas>
     <script src="game.js"></script>
 </body>
 

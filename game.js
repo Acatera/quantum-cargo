@@ -10,10 +10,18 @@ const game = {
             items: []
         },
         credits: 0,
-        fuel: 100,
         location: {
             x: 0,
             y: 0
+        },
+        destination: null,
+        ship: {
+            name: 'Starship',
+            maxFuel: 100,
+            maxCargo: 100,
+            fuel: 100,
+            consumption: 1,
+            speed: 5,
         }
     }
 }
@@ -25,11 +33,17 @@ function drawCircle(ctx, x, y, radius, color) {
     ctx.fill();
 }
 
-const gameElement = document.getElementById('game');
-gameElement.clientHeight = window.innerHeight;
 const canvas = document.getElementById('screen');
-canvas.width = gameElement.clientWidth;
-canvas.height = gameElement.clientHeight;
+
+// Required for the canvas to fill the entire screen
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let WORLD_WIDTH = canvas.width;
+let WORLD_HEIGHT = canvas.height;
+
+// WORLD_WIDTH = gameElement.clientWidth;
+// WORLD_HEIGHT = gameElement.clientHeight + 75;
 
 const itemsTypes = {
     ore: {
@@ -57,7 +71,7 @@ const ctx = canvas.getContext('2d');
 function generateStations() {
     let orbitCount = Math.random() * 4 + 2;
     for (let i = 0; i < orbitCount; i++) {
-        const maxDistance = canvas.width / 2 - 75;
+        const maxDistance = WORLD_WIDTH / 2 - 75;
         const offset = 100;
         let orbitRadius = Math.random() * (maxDistance - offset) + offset;
         // Render a circle with radius equal to orbitRadius
@@ -106,7 +120,8 @@ function generateOrbitStations(radius) {
             let itemTypesCount = Object.keys(itemsTypes).length;
             let itemId = Math.floor(Math.random() * itemTypesCount) + 1;
             station.inventory.add(itemId, itemCount);
-        } 
+        }
+
         stations.push(station);
 
         stationIndex++;
@@ -203,9 +218,10 @@ function renderStations() {
 }
 
 function render() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 
     renderStations();
+    renderPlayer(game.player);
     renderUI();
 
     requestAnimationFrame(render);
@@ -238,12 +254,12 @@ function findNearestStation(station, stations) {
     return nearestStation;
 }
 
-function drawLine(ctx, from, to) {
+function drawLine(ctx, from, to, color) {
     ctx.beginPath();
     ctx.moveTo(game.screen.offset.x + from.x, game.screen.offset.y + from.y);
-    ctx.lineWidth = 4;
+    ctx.lineWidth = 2;
     ctx.lineTo(game.screen.offset.x + to.x, game.screen.offset.y + to.y);
-    ctx.strokeStyle = 'green';
+    ctx.strokeStyle = color;
     ctx.stroke();
 }
 
@@ -252,12 +268,20 @@ function connectStations(ctx, stations) {
     currentStation.processed = true;
     let nextStation = findNearestStation(currentStation, stations);
     while (nextStation) {
-        drawLine(ctx, currentStation, nextStation);
+        drawLine(ctx, currentStation, nextStation, 'orange');
         currentStation = nextStation;
         currentStation.processed = true;
         nextStation = findNearestStation(currentStation, stations);
     }
 }
+
+// Handle resizing the window
+window.addEventListener('resize', function () {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    WORLD_WIDTH = canvas.width;
+    WORLD_HEIGHT = canvas.height;
+});
 
 // When mouse moves over a station, highlight it and show its name
 // When mouse moves out of a station, remove the highlight and hide the name
@@ -319,6 +343,26 @@ document.getElementById('screen').addEventListener('click', function (event) {
     }
 });
 
+// When a station is double clicked, set it as the player's destination
+document.getElementById('screen').addEventListener('dblclick', function (event) {
+    const x = event.clientX;
+    const y = event.clientY;
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = x - rect.left;
+    const mouseY = y - rect.top;
+
+    for (let i = 0; i < stations.length; i++) {
+        const station = stations[i];
+        const dx = mouseX - station.x - game.screen.offset.x;
+        const dy = mouseY - station.y - game.screen.offset.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < station.size) {
+            game.player.destination = station;
+            break;
+        }
+    }
+});
+
 // When dragging the mouse, alter game screen offset
 let isDragging = false;
 let lastX = 0;
@@ -332,6 +376,16 @@ document.getElementById('screen').addEventListener('mousedown', function (event)
 document.getElementById('screen').addEventListener('mouseup', function (event) {
     isDragging = false;
 });
+
+function renderPlayer(player) {
+    if (player.destination) {
+        drawLine(ctx, player.location, player.destination, 'green');
+    }
+
+    drawCircle(ctx,
+        game.screen.offset.x + player.location.x,
+        game.screen.offset.y + player.location.y, 4, 'red');
+}
 
 function renderUI() {
     let selectedStation = null;
@@ -358,11 +412,71 @@ function renderUI() {
             ctx.fillText(`${itemType.name}: ${item.quantity}`, 20, 120 + i * 30);
         }
     }
+
+    const offsetY = WORLD_HEIGHT - 100;
+    //Fill with white, 50% alpha
+    ctx.fillStyle = 'rgba(64, 64, 64, 0.8)';
+    ctx.fillRect(0, offsetY, WORLD_WIDTH, 100);
+
+    ctx.fillStyle = 'white';
+    ctx.font = '16px Arial';
+    ctx.fillText(`Credits: ${game.player.credits}`, 10, offsetY + 30);
+    ctx.fillText(`Fuel:`, 10, offsetY + 45);
+    renderProgressBar(ctx, 50, offsetY + 35, 200, 10, game.player.ship.maxFuel, game.player.ship.fuel);
+    ctx.fillText(`Destination: ${game.player.destination ? game.player.destination.name : 'None'}`, 10, offsetY + 60);
+
 }
 
-game.screen.offset.x = ctx.canvas.width / 2;
-game.screen.offset.y = ctx.canvas.height / 2;
+function renderProgressBar(ctx, x, y, width, height, maxValue, value) {
+    const prevFillStyle = ctx.fillStyle;
+    ctx.fillStyle = 'white';
+    ctx.fillRect(x, y, width, height);
+
+    const percentage = value / maxValue;
+    const barWidth = width * percentage;
+
+    ctx.fillStyle = 'green';
+    ctx.fillRect(x, y, barWidth, height);
+
+    ctx.fillStyle = prevFillStyle;
+}
+
+game.screen.offset.x = WORLD_WIDTH / 2;
+game.screen.offset.y = WORLD_HEIGHT / 2;
+
+function tick(game) {
+    if (game.player.destination) {
+        // Check player fuel
+        if (game.player.ship.fuel <= 0) {
+            game.player.destination = null;
+            return;
+        }
+
+        const dx = game.player.destination.x - game.player.location.x;
+        const dy = game.player.destination.y - game.player.location.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < 5) {
+            // Snap to the station
+            game.player.location.x = game.player.destination.x;
+            game.player.location.y = game.player.destination.y;
+
+            game.player.destination = null;
+        } else {
+            const angle = Math.atan2(dy, dx);
+            game.player.location.x += Math.cos(angle) * game.player.ship.speed;
+            game.player.location.y += Math.sin(angle) * game.player.ship.speed;
+
+            game.player.ship.fuel -= game.player.ship.consumption;
+        }
+    }
+}
 
 generateStations();
 
 render();
+
+
+setInterval(() => {
+    tick(game);
+}, 1000 / 60);
+``
