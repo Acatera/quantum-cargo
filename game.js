@@ -287,6 +287,15 @@ window.addEventListener('resize', function () {
 // When mouse moves out of a station, remove the highlight and hide the name
 // end
 document.getElementById('screen').addEventListener('mousemove', function (event) {
+    if (canDrag) {
+        const dx = lastX - event.clientX;
+        const dy = lastY - event.clientY;
+        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+            isDragging = true;
+            console.log('dragging');
+        }
+    }
+
     if (isDragging) {
         const dx = event.clientX - lastX;
         const dy = event.clientY - lastY;
@@ -295,6 +304,8 @@ document.getElementById('screen').addEventListener('mousemove', function (event)
 
         game.screen.offset.x += dx;
         game.screen.offset.y += dy;
+
+        return;
     }
 
     for (let i = 0; i < stations.length; i++) {
@@ -321,6 +332,13 @@ document.getElementById('screen').addEventListener('mousemove', function (event)
 
 // When a station is clicked, mark it as selected
 document.getElementById('screen').addEventListener('click', function (event) {
+    console.log(`click (isDragging: ${isDragging}, wasDragging: ${wasDragging})`);
+
+    if (wasDragging) {
+        wasDragging = false;
+        return;
+    }
+    
     for (let i = 0; i < stations.length; i++) {
         stations[i].selected = false;
     }
@@ -365,15 +383,22 @@ document.getElementById('screen').addEventListener('dblclick', function (event) 
 
 // When dragging the mouse, alter game screen offset
 let isDragging = false;
+let canDrag = false;
+let wasDragging = false;
 let lastX = 0;
 let lastY = 0;
 document.getElementById('screen').addEventListener('mousedown', function (event) {
-    isDragging = true;
+    canDrag = true;
     lastX = event.clientX;
     lastY = event.clientY;
 });
 
 document.getElementById('screen').addEventListener('mouseup', function (event) {
+    canDrag = false;
+    if (isDragging) {
+        console.log('was dragging');
+        wasDragging = true;
+    }
     isDragging = false;
 });
 
@@ -410,6 +435,18 @@ function renderUI() {
 
             const itemType = Object.values(itemsTypes).find(type => type.id === item.id);
             ctx.fillText(`${itemType.name}: ${item.quantity}`, 20, 120 + i * 30);
+
+            // Buy button
+            ctx.fillStyle = 'green';
+            ctx.fillRect(200, 110 + i * 30, 50, 20);
+            ctx.fillStyle = 'white';
+            ctx.fillText('Buy', 205, 125 + i * 30);
+
+            // Sell button
+            ctx.fillStyle = 'red';
+            ctx.fillRect(260, 110 + i * 30, 50, 20);
+            ctx.fillStyle = 'white';
+            ctx.fillText('Sell', 265, 125 + i * 30);
         }
     }
 
@@ -479,4 +516,3 @@ render();
 setInterval(() => {
     tick(game);
 }, 1000 / 60);
-``
