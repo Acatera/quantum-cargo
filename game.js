@@ -1,6 +1,7 @@
 import { Vector2 } from './vector2.js';
 import { Inventory } from './inventory.js';
 import { World } from './world.js';
+import { itemsTypes } from './item-types.js';
 
 export class Game {
     constructor() {
@@ -9,6 +10,7 @@ export class Game {
             credits: 10000,
             location: new Vector2(0, 0),
             destination: null,
+            station: null,
             ship: {
                 name: 'Starship',
                 maxFuel: 100,
@@ -21,6 +23,10 @@ export class Game {
         this.selectedStation = null;
         this.selectedItemIndex = null;
         this.world = new World(600, 600);
+
+        // this.player.station = this.world.stations[0];
+        this.player.inventory.add(itemsTypes.food.id, 100);
+        this.player.inventory.add(itemsTypes.ore.id, 10);
     }
 
     tick() {
@@ -36,6 +42,7 @@ export class Game {
             if (distance < 5) {
                 // Snap to the station
                 this.player.location = this.player.destination.pos.clone();
+                this.player.station = this.selectedStation;
 
                 this.player.destination = null;
             } else {

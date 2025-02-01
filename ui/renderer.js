@@ -6,11 +6,28 @@ export class Renderer {
         this.screen = screen;
         this.game = game;
         this.context = screen.context;
+        this.testRender = false;
+    }
+
+    _renderDiagonalLine() {
+        // Draw a line from top-left to bottom-right
+        this.context.strokeStyle = "red";
+        this.context.lineWidth = 2;
+        this.context.beginPath();
+        this.context.moveTo(0, 0);
+        this.context.lineTo(this.screen.width, this.screen.height);
+        this.context.stroke();
+
     }
 
     render() {
         this.context.fillStyle = 'black';
         this.context.fillRect(0, 0, this.screen.width, this.screen.height);
+
+        if (this.testRender) {
+            this._renderDiagonalLine();
+            return;
+        }
 
         this.renderStations(this.game.world.stations);
         this.renderPlayer(this.game.player);
@@ -75,15 +92,15 @@ export class Renderer {
         }
 
         if (this.screen.active) {
-            console.log('rendering screen');
             this.screen.active.render(this.context);
+            return;
         }
 
         if (this.game.selectedStation) {
             this.renderStationUI(this.game.selectedStation);
         }
 
-        // this.renderPlayerUI(this.game.player);
+        this.renderPlayerUI(this.game.player);
     }
 
     renderStationUI(station) {
@@ -112,10 +129,10 @@ export class Renderer {
     }
 
     renderPlayerUI(player) {
-        const offsetY = this.canvas.height - 100;
+        const offsetY = this.screen.height - 100;
         //Fill with white, 50% alpha
         this.context.fillStyle = 'rgba(64, 64, 64, 0.8)';
-        this.context.fillRect(0, offsetY, this.canvas.width, 100);
+        this.context.fillRect(0, offsetY, this.screen.width, 100);
 
         this.context.fillStyle = 'white';
         this.context.font = '16px Arial';
@@ -123,6 +140,7 @@ export class Renderer {
         this.context.fillText(`Fuel:`, 10, offsetY + 45);
         this.renderProgressBar(new Vector2(50, offsetY + 35), new Vector2(200, 10), this.game.player.ship.maxFuel, this.game.player.ship.fuel);
         this.context.fillText(`Destination: ${this.game.player.destination ? this.game.player.destination.name : 'None'}`, 10, offsetY + 60);
+        this.context.fillText(`Station: ${this.game.player.station ? this.game.player.station.name : 'None'}`, 10, offsetY + 75);
     }
 
     renderEndGameScreen() {

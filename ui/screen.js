@@ -8,8 +8,6 @@ export class Screen {
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
 
-        console.log(this.canvas.width, this.canvas.height);
-
         this.zoomSpeed = 0.05;
 
         this.renderer = null;

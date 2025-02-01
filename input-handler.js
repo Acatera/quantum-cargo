@@ -79,6 +79,7 @@ export class InputHandler {
             for (let i = 0; i < game.world.stations.length; i++) {
                 if (game.world.stations[i].isHovered(worldPos)) {
                     game.player.destination = game.world.stations[i];
+                    game.player.station = null;
                     break;
                 }
             }
@@ -113,21 +114,21 @@ export class InputHandler {
         document.addEventListener('keydown', function (event) {
             switch (event.key) {
                 case 't':
-                    console.log('Trading screen');
-                    screen.active = new TradingScreen(game);
+                    if (!game.player.station) {
+                        return;
+                    }
+
+                    screen.active = new TradingScreen(screen, game.player, game.player.station);
                     event.preventDefault();
-                    break;
+                    return;
             }
 
             if (screen.active) {
                 screen.active.handleKeyDown(event);
                 return;
             }
-
-            // Allow DevTools to open
-            if (event.key !== 'F12' && event.key !== 'F5') {
-                event.preventDefault();
-            }
         });
+
+        // this.screen.active = new TradingScreen(screen, game.player, game.player.station);
     }
 }
