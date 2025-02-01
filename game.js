@@ -1,19 +1,39 @@
+const SCALE_FACTOR = 0.05;
+
+class Vector2 {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    add(other) {
+        return new Vector2(this.x + other.x, this.y + other.y);
+    }
+
+    sub(other) {
+        return new Vector2(this.x - other.x, this.y - other.y);
+    }
+
+    scale(factor) {
+        return new Vector2(this.x * factor, this.y * factor);
+    }
+
+    magnitude() {
+        return Math.sqrt(this.x * this.x + this.y * this.y);
+    }
+}
+
 const game = {
     screen: {
-        offset: {
-            x: 0,
-            y: 0
-        },
+        offset: new Vector2(0, 0),
+        scale: 0.5
     },
     player: {
         inventory: {
             items: []
         },
         credits: 0,
-        location: {
-            x: 0,
-            y: 0
-        },
+        location: new Vector2(0, 0),
         destination: null,
         ship: {
             name: 'Starship',
@@ -93,14 +113,14 @@ function generateOrbitStations(radius) {
 
         const x = (radius + jitter) * Math.cos(angle);
         const y = (radius + jitter) * Math.sin(angle);
+        const pos = new Vector2(x, y);
 
         const minDistance = 20;
         // Check if the stations is far enough from other stations
         let isFarEnough = true;
         for (let i = 0; i < stations.length; i++) {
-            const dx = stations[i].x - x;
-            const dy = stations[i].y - y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
+            const delta = stations[i].pos.sub(pos);
+            const distance = delta.magnitude();
             if (distance < minDistance) {
                 isFarEnough = false;
                 tries++;
@@ -112,7 +132,7 @@ function generateOrbitStations(radius) {
             continue;
         }
 
-        const station = createStation(x, y, generateSpaceStationName(), 5, 'white');
+        const station = createStation(pos, generateSpaceStationName(), 5, 'white');
         const initialInventoryItems = Math.floor(Math.random() * 3) + 1;
         for (let i = 0; i < initialInventoryItems; i++) {
 
@@ -128,10 +148,9 @@ function generateOrbitStations(radius) {
     }
 }
 
-function createStation(x, y, name, size, color) {
+function createStation(pos, name, size, color) {
     return {
-        x,
-        y,
+        pos,
         name,
         size,
         color,
@@ -163,16 +182,17 @@ function createStation(x, y, name, size, color) {
 }
 
 function renderStation(station) {
-    const sx = game.screen.offset.x + station.x;
-    const sy = game.screen.offset.y + station.y;
+    const scaledPos = station.pos
+        .scale(game.screen.scale)
+        .add(game.screen.offset);
     if (station.hovered) {
-        drawCircle(ctx, sx, sy, station.size + 3, 'red');
+        drawCircle(ctx, scaledPos.x, scaledPos.y, station.size + 3, 'red');
     }
 
     if (station.selected) {
-        drawCircle(ctx, sx, sy, station.size + 3, 'blue');
+        drawCircle(ctx, scaledPos.x, scaledPos.y, station.size + 3, 'blue');
     }
-    drawCircle(ctx, sx, sy, station.size, station.color);
+    drawCircle(ctx, scaledPos.x, scaledPos.y, station.size, station.color);
 }
 
 function generateSpaceStationName() {
@@ -242,9 +262,7 @@ function findNearestStation(station, stations) {
             continue;
         }
 
-        const dx = station.x - otherStation.x;
-        const dy = station.y - otherStation.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
+        const distance = station.pos.sub(otherStation.pos).magnitude();
         if (distance < nearestDistance) {
             nearestDistance = distance;
             nearestStation = otherStation;
@@ -268,7 +286,9 @@ function connectStations(ctx, stations) {
     currentStation.processed = true;
     let nextStation = findNearestStation(currentStation, stations);
     while (nextStation) {
-        drawLine(ctx, currentStation, nextStation, 'orange');
+        const from = currentStation.pos.scale(game.screen.scale);
+        const to = nextStation.pos.scale(game.screen.scale);
+        drawLine(ctx, from, to, 'orange');
         currentStation = nextStation;
         currentStation.processed = true;
         nextStation = findNearestStation(currentStation, stations);
@@ -292,7 +312,6 @@ document.getElementById('screen').addEventListener('mousemove', function (event)
         const dy = lastY - event.clientY;
         if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
             isDragging = true;
-            console.log('dragging');
         }
     }
 
@@ -320,8 +339,9 @@ document.getElementById('screen').addEventListener('mousemove', function (event)
 
     for (let i = 0; i < stations.length; i++) {
         const station = stations[i];
-        const dx = mouseX - station.x - game.screen.offset.x;
-        const dy = mouseY - station.y - game.screen.offset.y;
+        const scaledPos = station.pos.scale(game.screen.scale);
+        const dx = mouseX - scaledPos.x - game.screen.offset.x;
+        const dy = mouseY - scaledPos.y - game.screen.offset.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
         if (distance < station.size) {
             station.hovered = true;
@@ -338,7 +358,7 @@ document.getElementById('screen').addEventListener('click', function (event) {
         wasDragging = false;
         return;
     }
-    
+
     for (let i = 0; i < stations.length; i++) {
         stations[i].selected = false;
     }
@@ -351,8 +371,9 @@ document.getElementById('screen').addEventListener('click', function (event) {
 
     for (let i = 0; i < stations.length; i++) {
         const station = stations[i];
-        const dx = mouseX - station.x - game.screen.offset.x;
-        const dy = mouseY - station.y - game.screen.offset.y;
+        const scaledPos = station.pos.scale(game.screen.scale);
+        const dx = mouseX - scaledPos.x - game.screen.offset.x;
+        const dy = mouseY - scaledPos.y - game.screen.offset.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
         if (distance < station.size) {
             station.selected = true;
@@ -371,11 +392,13 @@ document.getElementById('screen').addEventListener('dblclick', function (event) 
 
     for (let i = 0; i < stations.length; i++) {
         const station = stations[i];
-        const dx = mouseX - station.x - game.screen.offset.x;
-        const dy = mouseY - station.y - game.screen.offset.y;
+        const scaledPos = station.pos.scale(game.screen.scale);
+        const dx = mouseX - scaledPos.x - game.screen.offset.x;
+        const dy = mouseY - scaledPos.y - game.screen.offset.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
         if (distance < station.size) {
             game.player.destination = station;
+            console.log(`Destination set to ${station.name}`);
             break;
         }
     }
@@ -402,14 +425,33 @@ document.getElementById('screen').addEventListener('mouseup', function (event) {
     isDragging = false;
 });
 
-function renderPlayer(player) {
-    if (player.destination) {
-        drawLine(ctx, player.location, player.destination, 'green');
+// When the mouse wheel is scrolled, zoom in or out
+document.getElementById('screen').addEventListener('wheel', function (event) {
+    const delta = Math.sign(event.deltaY);
+    if (delta > 0) {
+        game.screen.scale -= SCALE_FACTOR;
+    } else {
+        game.screen.scale += SCALE_FACTOR;
     }
 
-    drawCircle(ctx,
-        game.screen.offset.x + player.location.x,
-        game.screen.offset.y + player.location.y, 4, 'red');
+    if (game.screen.scale < 0.1) {
+        game.screen.scale = 0.1;
+    } else if (game.screen.scale > 2) {
+        game.screen.scale = 2;
+    }
+});
+
+function renderPlayer(player) {
+    const scaledPlayerPos = player.location.scale(game.screen.scale);
+    if (player.destination) {
+        const scaledDestinationPos = player.destination.pos.scale(game.screen.scale);
+        drawLine(ctx, scaledPlayerPos, scaledDestinationPos, 'green');
+    }
+
+    const playerPos = player.location
+        .scale(game.screen.scale)
+        .add(game.screen.offset);
+    drawCircle(ctx, playerPos.x, playerPos.y, 4, 'red');
 }
 
 function renderUI() {
@@ -427,7 +469,7 @@ function renderUI() {
         ctx.fillText(selectedStation.name, 10, 30);
 
         ctx.font = '16px Arial';
-        ctx.fillText(`X: ${selectedStation.x.toFixed(2)}, Y: ${selectedStation.y.toFixed(2)}`, 10, 60);
+        ctx.fillText(`X: ${selectedStation.pos.x.toFixed(2)}, Y: ${selectedStation.pos.y.toFixed(2)}`, 10, 60);
 
         ctx.fillText('Inventory:', 10, 90);
         for (let i = 0; i < selectedStation.inventory.items.length; i++) {
@@ -489,19 +531,22 @@ function tick(game) {
             return;
         }
 
-        const dx = game.player.destination.x - game.player.location.x;
-        const dy = game.player.destination.y - game.player.location.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
+        const delta = game.player.destination.pos.sub(game.player.location);
+        const distance = delta.magnitude();
         if (distance < 5) {
             // Snap to the station
-            game.player.location.x = game.player.destination.x;
-            game.player.location.y = game.player.destination.y;
+            game.player.location.x = game.player.destination.pos.x;
+            game.player.location.y = game.player.destination.pos.y;
 
             game.player.destination = null;
         } else {
-            const angle = Math.atan2(dy, dx);
-            game.player.location.x += Math.cos(angle) * game.player.ship.speed;
-            game.player.location.y += Math.sin(angle) * game.player.ship.speed;
+            const angle = Math.atan2(delta.y, delta.x);
+
+            const dx = Math.cos(angle) * game.player.ship.speed;
+            const dy = Math.sin(angle) * game.player.ship.speed;
+
+            game.player.location.x += dx;
+            game.player.location.y += dy;
 
             game.player.ship.fuel -= game.player.ship.consumption;
         }
