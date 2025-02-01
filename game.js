@@ -44,9 +44,6 @@ canvas.height = window.innerHeight;
 let WORLD_WIDTH = canvas.width;
 let WORLD_HEIGHT = canvas.height;
 
-// WORLD_WIDTH = gameElement.clientWidth;
-// WORLD_HEIGHT = gameElement.clientHeight + 75;
-
 const itemsTypes = {
     ore: {
         id: 1,
