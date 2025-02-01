@@ -1,68 +1,19 @@
+import { RoundUiElement } from "./RoundUiElement.js";
+import { SquareUiElement } from "./SquareUiElement.js";
+import { Vector2 } from "./Vector2.js";
+
 const SCALE_FACTOR = 0.05;
-
-class Vector2 {
-    constructor(x, y) {
-        this.x = x;
-        this.y = y;
-    }
-
-    add(other) {
-        return new Vector2(this.x + other.x, this.y + other.y);
-    }
-
-    sub(other) {
-        return new Vector2(this.x - other.x, this.y - other.y);
-    }
-
-    scale(factor) {
-        return new Vector2(this.x * factor, this.y * factor);
-    }
-
-    magnitude() {
-        return Math.sqrt(this.x * this.x + this.y * this.y);
-    }
-}
-
-class SquareUiElement {
-    constructor(pos, size, data) {
-        this.pos = new Vector2(pos.x, pos.y);
-        this.size = size;
-        this.data = data;
-    }
-
-    isInside(pos){
-        return pos.x >= this.pos.x && pos.x <= this.pos.x + this.size &&
-        pos.y >= this.pos.y && pos.y <= this.pos.y + this.size;
-    }
-}
-
-class RoundUiElement {
-    constructor(pos, radius, data) {
-        this.pos = new Vector2(pos.x, pos.y);
-        this.radius = radius;
-        this.data = data;
-    }
-
-    isInside(pos) {
-        const dx = pos.x - this.pos.x;
-        const dy = pos.y - this.pos.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        return distance <= this.radius;
-    }
-}
 
 const uiElements = [];
 
 const game = {
     screen: {
         offset: new Vector2(0, 0),
-        scale: 0.5
+        scale: 1
     },
     player: {
-        inventory: {
-            items: []
-        },
-        credits: 0,
+        inventory: createInventory(),
+        credits: 10000,
         location: new Vector2(0, 0),
         destination: null,
         ship: {
@@ -116,7 +67,9 @@ const itemsTypes = {
     }
 };
 
+const devicePixelRatio = 1 / window.devicePixelRatio || 1;
 const ctx = canvas.getContext('2d');
+ctx.scale(devicePixelRatio, devicePixelRatio);
 
 function generateStations() {
     let orbitCount = Math.random() * 4 + 2;
@@ -174,7 +127,7 @@ function generateOrbitStations(radius) {
 
         stations.push(station);
 
-        uiElements.push(new RoundUiElement(pos, station.size, station));
+        uiElements.push(new RoundUiElement(pos, station.size, station, 'station'));
 
         stationIndex++;
     }
@@ -187,28 +140,32 @@ function createStation(pos, name, size, color) {
         size,
         color,
         processed: false,
-        inventory: {
-            items: [],
-            add(itemId, quantity) {
-                const existingItem = this.items.find(item => item.id === itemId);
-                if (existingItem) {
-                    existingItem.quantity += quantity;
-                } else {
-                    this.items.push({
-                        id: itemId,
-                        quantity
-                    });
+        inventory: createInventory(),
+    };
+}
+
+function createInventory() {
+    return {
+        items: [],
+        add(itemId, quantity) {
+            const existingItem = this.items.find(item => item.id === itemId);
+            if (existingItem) {
+                existingItem.quantity += quantity;
+            } else {
+                this.items.push({
+                    id: itemId,
+                    quantity
+                });
+            }
+        },
+        remove(itemId, quantity) {
+            const existingItem = this.items.find(item => item.id === itemId);
+            if (existingItem) {
+                existingItem.quantity -= quantity;
+                if (existingItem.quantity <= 0) {
+                    this.items = this.items.filter(item => item.id !== itemId);
                 }
-            },
-            remove(itemId, quantity) {
-                const existingItem = this.items.find(item => item.id === itemId);
-                if (existingItem) {
-                    existingItem.quantity -= quantity;
-                    if (existingItem.quantity <= 0) {
-                        this.items = this.items.filter(item => item.id !== itemId);
-                    }
-                }
-            },
+            }
         },
     };
 }
@@ -270,7 +227,8 @@ function renderStations() {
 }
 
 function render() {
-    ctx.clearRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 
     renderStations();
     renderPlayer(game.player);
@@ -368,8 +326,13 @@ document.getElementById('screen').addEventListener('mousemove', function (event)
     const rect = canvas.getBoundingClientRect();
     const mouseX = x - rect.left;
     const mouseY = y - rect.top;
-    const mousePos = new Vector2(mouseX, mouseY);
-    const worldPos = mousePos.sub(game.screen.offset).scale(1 / game.screen.scale);
+    const mousePos = new Vector2(mouseX, mouseY).scale(1 / devicePixelRatio);
+    const worldPos = mousePos
+        .scale(1 / game.screen.scale)
+        .sub(game.screen.offset.scale(1 / game.screen.scale));
+    console.log(`mousePos: ${mousePos.x}, ${mousePos.y}`);
+    console.log(`worldPos: ${worldPos.x}, ${worldPos.y}`);
+
     for (let i = 0; i < uiElements.length; i++) {
         if (uiElements[i].isInside(worldPos)) {
             uiElements[i].data.hovered = true;
@@ -387,23 +350,42 @@ document.getElementById('screen').addEventListener('click', function (event) {
         return;
     }
 
-    for (let i = 0; i < stations.length; i++) {
-        stations[i].selected = false;
-    }
-
     const x = event.clientX;
     const y = event.clientY;
     const rect = canvas.getBoundingClientRect();
     const mouseX = x - rect.left;
     const mouseY = y - rect.top;
-    const mousePos = new Vector2(mouseX, mouseY);
-    const worldPos = mousePos.sub(game.screen.offset).scale(1 / game.screen.scale);
+    const mousePos = new Vector2(mouseX, mouseY).scale(1 / devicePixelRatio);
+    const worldPos = mousePos
+        .scale(1 / game.screen.scale)
+        .sub(game.screen.offset.scale(1 / game.screen.scale));
+    let selectedStation = null;
 
     for (let i = 0; i < uiElements.length; i++) {
         if (uiElements[i].isInside(worldPos)) {
-            uiElements[i].data.selected = !uiElements[i].data.selected;
-            break;
+            if (uiElements[i].type === 'station') {
+                selectedStation = uiElements[i].data;
+                uiElements[i].data.selected = !uiElements[i].data.selected;
+                break;
+            }
         }
+
+        if (uiElements[i].isInside(mousePos)) {
+            if (uiElements[i].type === 'button') {
+                console.log('button clicked');
+                uiElements[i].data.onClick();
+                event.preventDefault();
+                return;
+            }
+        }
+    }
+
+    for (let i = 0; i < stations.length; i++) {
+        stations[i].selected = false;
+    }
+
+    if (selectedStation) {
+        selectedStation.selected = true;
     }
 });
 
@@ -414,13 +396,18 @@ document.getElementById('screen').addEventListener('dblclick', function (event) 
     const rect = canvas.getBoundingClientRect();
     const mouseX = x - rect.left;
     const mouseY = y - rect.top;
-    const mousePos = new Vector2(mouseX, mouseY);
-    const worldPos = mousePos.sub(game.screen.offset).scale(1 / game.screen.scale);
+    const mousePos = new Vector2(mouseX, mouseY)
+        .scale(1 / devicePixelRatio);
+    const worldPos = mousePos
+        .scale(1 / game.screen.scale)
+        .sub(game.screen.offset.scale(1 / game.screen.scale));
 
     for (let i = 0; i < uiElements.length; i++) {
         if (uiElements[i].isInside(worldPos)) {
-            game.player.destination = uiElements[i].data;
-            break;
+            if (uiElements[i].type === 'station') {
+                game.player.destination = uiElements[i].data;
+                break;
+            }
         }
     }
 });
@@ -507,6 +494,17 @@ function renderUI() {
             ctx.fillStyle = 'white';
             ctx.fillText('Buy', 205, 125 + i * 30);
 
+            let buyClick = function () {
+                if (game.player.credits >= itemType.value) {
+                    game.player.credits -= itemType.value;
+                    game.player.inventory.add(item.id, 1);
+                    selectedStation.inventory.remove(item.id, 1);
+                }
+            }
+
+            let buyButton = new SquareUiElement(new Vector2(200, 110 + i * 30), 50, { onClick: buyClick }, 'button');
+            uiElements.push(buyButton);
+
             // Sell button
             ctx.fillStyle = 'red';
             ctx.fillRect(260, 110 + i * 30, 50, 20);
@@ -526,7 +524,6 @@ function renderUI() {
     ctx.fillText(`Fuel:`, 10, offsetY + 45);
     renderProgressBar(ctx, 50, offsetY + 35, 200, 10, game.player.ship.maxFuel, game.player.ship.fuel);
     ctx.fillText(`Destination: ${game.player.destination ? game.player.destination.name : 'None'}`, 10, offsetY + 60);
-
 }
 
 function renderProgressBar(ctx, x, y, width, height, maxValue, value) {
