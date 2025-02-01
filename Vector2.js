@@ -20,4 +20,8 @@ export class Vector2 {
     magnitude() {
         return Math.sqrt(this.x * this.x + this.y * this.y);
     }
+
+    clone() {
+        return new Vector2(this.x, this.y);
+    }
 }

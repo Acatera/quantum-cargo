@@ -56,4 +56,9 @@ export class SpaceStation {
 
         return includeSerial ? `${prefix} ${core} ${suffix}-${serial}` : `${prefix} ${core} ${suffix}`;
     }
+
+    isHovered(mousePos) {
+        const distance = this.pos.sub(mousePos).magnitude();
+        return distance < this.size;
+    }
 }
