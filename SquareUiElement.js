@@ -9,7 +9,7 @@ export class SquareUiElement {
     }
 
     isInside(pos) {
-        return pos.x >= this.pos.x && pos.x <= this.pos.x + this.size &&
-            pos.y >= this.pos.y && pos.y <= this.pos.y + this.size;
+        return pos.x >= this.pos.x && pos.x <= this.pos.x + this.size.x &&
+            pos.y >= this.pos.y && pos.y <= this.pos.y + this.size.y;
     }
 }

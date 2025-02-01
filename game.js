@@ -1,10 +1,11 @@
 import { RoundUiElement } from "./RoundUiElement.js";
 import { SquareUiElement } from "./SquareUiElement.js";
 import { Vector2 } from "./Vector2.js";
+import { UiButton } from "./UiButton.js";
 
 const SCALE_FACTOR = 0.05;
 
-const uiElements = [];
+let uiElements = [];
 
 const game = {
     screen: {
@@ -135,6 +136,8 @@ function generateOrbitStations(radius) {
 
 function createStation(pos, name, size, color) {
     return {
+        // Guid
+        id: Math.random().toString(36),
         pos,
         name,
         size,
@@ -330,8 +333,6 @@ document.getElementById('screen').addEventListener('mousemove', function (event)
     const worldPos = mousePos
         .scale(1 / game.screen.scale)
         .sub(game.screen.offset.scale(1 / game.screen.scale));
-    console.log(`mousePos: ${mousePos.x}, ${mousePos.y}`);
-    console.log(`worldPos: ${worldPos.x}, ${worldPos.y}`);
 
     for (let i = 0; i < uiElements.length; i++) {
         if (uiElements[i].isInside(worldPos)) {
@@ -359,7 +360,6 @@ document.getElementById('screen').addEventListener('click', function (event) {
     const worldPos = mousePos
         .scale(1 / game.screen.scale)
         .sub(game.screen.offset.scale(1 / game.screen.scale));
-    let selectedStation = null;
 
     for (let i = 0; i < uiElements.length; i++) {
         if (uiElements[i].isInside(worldPos)) {
@@ -370,9 +370,14 @@ document.getElementById('screen').addEventListener('click', function (event) {
             }
         }
 
+
+        // console.log(`uiElement[${i}]: ${uiElements[i].pos.x}, ${uiElements[i].pos.y} - mousePos: ${mousePos.x}, ${mousePos.y}`);
         if (uiElements[i].isInside(mousePos)) {
+            console.log('inside');
             if (uiElements[i].type === 'button') {
                 console.log('button clicked');
+                console.log(uiElements[i].data);
+                // onBuyClick
                 uiElements[i].data.onClick();
                 event.preventDefault();
                 return;
@@ -386,6 +391,7 @@ document.getElementById('screen').addEventListener('click', function (event) {
 
     if (selectedStation) {
         selectedStation.selected = true;
+        selectedItemIndex = 0;
     }
 });
 
@@ -464,15 +470,25 @@ function renderPlayer(player) {
     drawCircle(ctx, playerPos.x, playerPos.y, 4 * game.screen.scale, 'red');
 }
 
-function renderUI() {
-    let selectedStation = null;
-    for (let i = 0; i < stations.length; i++) {
-        if (stations[i].selected) {
-            selectedStation = stations[i];
-            break;
+function onBuyClick(stationId, itemId) {
+    return function () {
+        const station = stations.find(station => station.id === stationId);
+        const item = station.inventory.items.find(item => item.id === itemId);
+        if (item) {
+            const itemType = Object.values(itemsTypes).find(type => type.id === itemId);
+            if (game.player.credits >= itemType.value) {
+                game.player.credits -= itemType.value;
+                game.player.inventory.add(itemId, 1);
+                station.inventory.remove(itemId, 1);
+            }
         }
-    }
+    };
+}
 
+let selectedStation = null;
+let selectedItemIndex = null;
+
+function renderUI() {
     if (selectedStation) {
         ctx.fillStyle = 'white';
         ctx.font = '24px Arial';
@@ -486,30 +502,15 @@ function renderUI() {
             const item = selectedStation.inventory.items[i];
 
             const itemType = Object.values(itemsTypes).find(type => type.id === item.id);
-            ctx.fillText(`${itemType.name}: ${item.quantity}`, 20, 120 + i * 30);
-
-            // Buy button
-            ctx.fillStyle = 'green';
-            ctx.fillRect(200, 110 + i * 30, 50, 20);
-            ctx.fillStyle = 'white';
-            ctx.fillText('Buy', 205, 125 + i * 30);
-
-            let buyClick = function () {
-                if (game.player.credits >= itemType.value) {
-                    game.player.credits -= itemType.value;
-                    game.player.inventory.add(item.id, 1);
-                    selectedStation.inventory.remove(item.id, 1);
-                }
+            if (selectedItemIndex === i) {
+                ctx.fillStyle = 'orange';
+                // Unicode dot
+                ctx.fillText('\u2022', 10, 120 + i * 30);
+            } else {
+                ctx.fillStyle = 'white';
             }
 
-            let buyButton = new SquareUiElement(new Vector2(200, 110 + i * 30), 50, { onClick: buyClick }, 'button');
-            uiElements.push(buyButton);
-
-            // Sell button
-            ctx.fillStyle = 'red';
-            ctx.fillRect(260, 110 + i * 30, 50, 20);
-            ctx.fillStyle = 'white';
-            ctx.fillText('Sell', 265, 125 + i * 30);
+            ctx.fillText(`${itemType.name}: ${item.quantity}`, 20, 120 + i * 30);
         }
     }
 
@@ -525,6 +526,79 @@ function renderUI() {
     renderProgressBar(ctx, 50, offsetY + 35, 200, 10, game.player.ship.maxFuel, game.player.ship.fuel);
     ctx.fillText(`Destination: ${game.player.destination ? game.player.destination.name : 'None'}`, 10, offsetY + 60);
 }
+
+// On key press. Arrows control game.screen.offset
+document.addEventListener('keydown', function (event) {
+    switch (event.key) {
+        case 'ArrowLeft':
+            game.screen.offset.x += 10;
+            event.preventDefault();
+            break;
+        case 'ArrowRight':
+            game.screen.offset.x -= 10;
+            event.preventDefault();
+            break;
+        case 'ArrowUp':
+            game.screen.offset.y += 10;
+            event.preventDefault();
+            break;
+        case 'ArrowDown':
+            game.screen.offset.y -= 10;
+            event.preventDefault();
+            break;
+        // Minus and plus to zoom in and out
+        case '-':
+            game.screen.scale -= SCALE_FACTOR;
+            event.preventDefault();
+            break;
+        case '=':
+            game.screen.scale += SCALE_FACTOR;
+            event.preventDefault();
+            break;
+        // Square bracket keys increase and decrease the selected item index
+        case '[':
+            if (selectedStation) {
+                selectedItemIndex--;
+                if (selectedItemIndex < 0) {
+                    selectedItemIndex = 0;
+                }
+            }
+            break;
+        case ']':
+            if (selectedStation) {
+                selectedItemIndex++;
+                if (selectedItemIndex >= selectedStation.inventory.items.length) {
+                    selectedItemIndex = selectedStation.inventory.items.length - 1;
+                }
+            }
+            break;
+        // B key to buy an item
+        case 'b':
+            if (selectedStation && selectedItemIndex !== null) {
+                const item = selectedStation.inventory.items[selectedItemIndex];
+                const itemType = Object.values(itemsTypes).find(type => type.id === item.id);
+                if (game.player.credits >= itemType.value) {
+                    game.player.credits -= itemType.value;
+                    game.player.inventory.add(item.id, 1);
+                    selectedStation.inventory.remove(item.id, 1);
+                }
+            }
+            break;
+        // S key to sell an item
+        case 's':
+            if (selectedStation && selectedItemIndex !== null) {
+                const item = selectedStation.inventory.items[selectedItemIndex];
+                const itemType = Object.values(itemsTypes).find(type => type.id === item.id);
+                if (game.player.inventory.items.find(i => i.id === item.id)) {
+                    game.player.credits += itemType.value;
+                    game.player.inventory.remove(item.id, 1);
+                    selectedStation.inventory.add(item.id, 1);
+                }
+            }
+            break;
+        }   
+});
+
 
 function renderProgressBar(ctx, x, y, width, height, maxValue, value) {
     const prevFillStyle = ctx.fillStyle;
