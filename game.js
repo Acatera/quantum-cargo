@@ -1,7 +1,7 @@
 // @ts-nocheck
 
 import { RoundUiElement } from "./RoundUiElement.js";
-import { Vector2 } from "./Vector2.js";
+import { Vector2 } from "./vector2.js";
 import { SpaceStation } from "./space-station.js";
 import { Inventory } from "./inventory.js";
 import { itemsTypes } from "./item-types.js";
@@ -114,6 +114,7 @@ function renderStation(station) {
     if (station.selected) {
         drawCircle(ctx, scaledPos.x, scaledPos.y, (station.size + 3) * game.screen.scale, 'blue');
     }
+
     drawCircle(ctx, scaledPos.x, scaledPos.y, station.size * game.screen.scale, station.color);
 }
 

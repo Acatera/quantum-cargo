@@ -25,7 +25,6 @@ export class SpaceStation {
         }
     }
 
-
     _generateSpaceStationName() {
         const prefixes = [
             "Lunar", "Neptune", "Vega", "Orion", "Apollo", "Ares", "Zeus",
