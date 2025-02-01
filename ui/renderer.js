@@ -2,21 +2,19 @@ import { Vector2 } from "../vector2.js";
 import { itemsTypes } from "../item-types.js";
 
 export class Renderer {
-    constructor(ctx, game) {
-        this.canvas = ctx.canvas;
-        this.context = ctx;
+    constructor(screen, game) {
+        this.screen = screen;
         this.game = game;
+        this.context = screen.context;
     }
 
     render() {
         this.context.fillStyle = 'black';
-        this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.context.fillRect(0, 0, this.screen.width, this.screen.height);
 
         this.renderStations(this.game.world.stations);
         this.renderPlayer(this.game.player);
         this.renderUI();
-
-        // requestAnimationFrame(render);
     }
 
     renderStations(stations) {
@@ -30,31 +28,27 @@ export class Renderer {
     }
 
     renderStation(station) {
-        const scaledPos = station.pos
-            .scale(this.game.screen.scale)
-            .add(this.game.screen.offset);
+        const screenPos = this.screen.transformToScreenPos(station.pos);
         if (station.hovered) {
-            this._drawCircle(this.context, scaledPos, (station.size + 3) * this.game.screen.scale, 'red');
+            this._drawCircle(this.context, screenPos, (station.size + 3) * this.screen.zoom, 'red');
         }
 
         if (station.id === this.game.selectedStation?.id) {
-            this._drawCircle(this.context, scaledPos, (station.size + 3) * this.game.screen.scale, 'blue');
+            this._drawCircle(this.context, screenPos, (station.size + 3) * this.screen.zoom, 'blue');
         }
 
-        this._drawCircle(this.context, scaledPos, station.size * this.game.screen.scale, station.color);
+        this._drawCircle(this.context, screenPos, station.size * this.screen.zoom, station.color);
     }
 
     renderPlayer(player) {
-        const scaledPlayerPos = player.location.scale(this.game.screen.scale);
+        const screenPos = this.screen.transformToScreenPos(player.location);
         if (player.destination) {
-            const scaledDestinationPos = player.destination.pos.scale(this.game.screen.scale);
-            this._drawLine(this.context, scaledPlayerPos, scaledDestinationPos, 'green');
+            const destination = this.screen.transformToScreenPos(player.destination.pos);
+            this._drawLine(this.context, screenPos, destination, 'green');
         }
 
-        const playerPos = player.location
-            .scale(this.game.screen.scale)
-            .add(this.game.screen.offset);
-        this._drawCircle(this.context, playerPos, 4 * this.game.screen.scale, 'red');
+        const playerPos = this.screen.transformToScreenPos(player.location);
+        this._drawCircle(this.context, playerPos, 4 * this.screen.zoom, 'red');
     }
 
     _drawCircle(ctx, pos, radius, color) {
@@ -64,12 +58,11 @@ export class Renderer {
         ctx.fill();
     }
 
-
     _drawLine(ctx, from, to, color) {
         ctx.beginPath();
-        ctx.moveTo(this.game.screen.offset.x + from.x, this.game.screen.offset.y + from.y);
-        ctx.lineWidth = 2 * this.game.screen.scale;
-        ctx.lineTo(this.game.screen.offset.x + to.x, this.game.screen.offset.y + to.y);
+        ctx.moveTo(from.x, from.y);
+        ctx.lineWidth = 2 * this.screen.zoom;
+        ctx.lineTo(to.x, to.y);
         ctx.strokeStyle = color;
         ctx.stroke();
     }
@@ -81,11 +74,16 @@ export class Renderer {
             return;
         }
 
+        if (this.screen.active) {
+            console.log('rendering screen');
+            this.screen.active.render(this.context);
+        }
+
         if (this.game.selectedStation) {
             this.renderStationUI(this.game.selectedStation);
         }
 
-        this.renderPlayerUI(this.game.player);
+        // this.renderPlayerUI(this.game.player);
     }
 
     renderStationUI(station) {

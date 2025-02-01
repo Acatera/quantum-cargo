@@ -1,25 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quantum Cargo</title>
     <style>
-        * {
+        body, html {
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
+            overflow: hidden; /* Prevent scrolling */
+            background-color: #f0f0f0; /* Optional background color */
         }
-
-        body {
-            background-color: #fff;
+        canvas {
+            display: block; /* Remove default margin */
         }
     </style>
 </head>
-
 <body>
-    <canvas id="screen" style="display: block; width: 100vw; height: 100vh;"></canvas>
+    <canvas id="screen"></canvas>
     <script type="module" src="main.js"></script>
 </body>
 
