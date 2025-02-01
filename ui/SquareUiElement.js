@@ -1,7 +1,7 @@
 
 // @ts-nocheck
 
-import { Vector2 } from "./Vector2.js";
+import { Vector2 } from "../Vector2.js";
 
 export class SquareUiElement {
     constructor(pos, size, data, type) {

@@ -1,6 +1,6 @@
 // @ts-nocheck
 
-import { Renderer } from './renderer.js';
+import { Renderer } from './ui/renderer.js';
 import { Vector2 } from './vector2.js';
 import { Game } from './game.js';
 
@@ -216,74 +216,9 @@ document.getElementById('screen').addEventListener('wheel', function (event) {
 // On key press. Arrows control game.screen.offset
 document.addEventListener('keydown', function (event) {
     switch (event.key) {
-        case 'ArrowLeft':
-            game.screen.offset.x += 10;
+        case 't':
+            game.screen.active = new TradingScreen(game);
             event.preventDefault();
-            break;
-        case 'ArrowRight':
-            game.screen.offset.x -= 10;
-            event.preventDefault();
-            break;
-        case 'ArrowUp':
-            game.screen.offset.y += 10;
-            event.preventDefault();
-            break;
-        case 'ArrowDown':
-            game.screen.offset.y -= 10;
-            event.preventDefault();
-            break;
-        // Minus and plus to zoom in and out
-        case '-':
-            game.screen.scale -= SCALE_FACTOR;
-            event.preventDefault();
-            break;
-        case '=':
-            game.screen.scale += SCALE_FACTOR;
-            event.preventDefault();
-            break;
-        // Square bracket keys increase and decrease the selected item index
-        case '[':
-            if (game.selectedStation) {
-                game.selectedItemIndex--;
-                if (game.selectedItemIndex < 0) {
-                    game.selectedItemIndex = 0;
-                }
-            }
-            break;
-        case ']':
-            if (game.selectedStation) {
-                game.selectedItemIndex++;
-                if (game.selectedItemIndex >= game.selectedStation.inventory.items.length) {
-                    game.selectedItemIndex = game.selectedStation.inventory.items.length - 1;
-                }
-            }
-            break;
-        // B key to buy an item
-        case 'b':
-            if (game.selectedStation && game.selectedItemIndex !== null) {
-                const item = game.selectedStation.inventory.items[game.selectedItemIndex];
-                const itemType = Object.values(itemsTypes).find(type => type.id === item.id);
-                if (game.player.credits >= itemType.value) {
-                    game.player.credits -= itemType.value;
-                    game.player.inventory.add(item.id, 1);
-                    game.selectedStation.inventory.remove(item.id, 1);
-                }
-                if (item.quantity <= 0) {
-                    game.selectedItemIndex = 0;
-                }
-            }
-            break;
-        // S key to sell an item
-        case 's':
-            if (game.selectedStation && game.selectedItemIndex !== null) {
-                const item = game.selectedStation.inventory.items[game.selectedItemIndex];
-                const itemType = Object.values(itemsTypes).find(type => type.id === item.id);
-                if (game.player.inventory.items.find(i => i.id === item.id)) {
-                    game.player.credits += itemType.value;
-                    game.player.inventory.remove(item.id, 1);
-                    game.selectedStation.inventory.add(item.id, 1);
-                }
-            }
             break;
     }
 });

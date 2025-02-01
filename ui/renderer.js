@@ -1,5 +1,5 @@
-import { Vector2 } from "./vector2.js";
-import { itemsTypes } from "./item-types.js";
+import { Vector2 } from "../vector2.js";
+import { itemsTypes } from "../item-types.js";
 
 export class Renderer {
     constructor(ctx, game) {
@@ -84,6 +84,8 @@ export class Renderer {
         if (this.game.selectedStation) {
             this.renderStationUI(this.game.selectedStation);
         }
+
+        this.renderPlayerUI(this.game.player);
     }
 
     renderStationUI(station) {
@@ -114,39 +116,39 @@ export class Renderer {
     renderPlayerUI(player) {
         const offsetY = this.canvas.height - 100;
         //Fill with white, 50% alpha
-        ctx.fillStyle = 'rgba(64, 64, 64, 0.8)';
-        ctx.fillRect(0, offsetY, WORLD_WIDTH, 100);
+        this.context.fillStyle = 'rgba(64, 64, 64, 0.8)';
+        this.context.fillRect(0, offsetY, this.canvas.width, 100);
 
-        ctx.fillStyle = 'white';
-        ctx.font = '16px Arial';
-        ctx.fillText(`Credits: ${this.game.player.credits}`, 10, offsetY + 30);
-        ctx.fillText(`Fuel:`, 10, offsetY + 45);
+        this.context.fillStyle = 'white';
+        this.context.font = '16px Arial';
+        this.context.fillText(`Credits: ${this.game.player.credits}`, 10, offsetY + 30);
+        this.context.fillText(`Fuel:`, 10, offsetY + 45);
         this.renderProgressBar(new Vector2(50, offsetY + 35), new Vector2(200, 10), this.game.player.ship.maxFuel, this.game.player.ship.fuel);
-        ctx.fillText(`Destination: ${this.game.player.destination ? this.game.player.destination.name : 'None'}`, 10, offsetY + 60);
+        this.context.fillText(`Destination: ${this.game.player.destination ? this.game.player.destination.name : 'None'}`, 10, offsetY + 60);
     }
 
     renderEndGameScreen() {
         // Clear screen
         this.context.fillStyle = 'black';
-        this.context.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+        this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
         this.context.fillStyle = 'red';
         this.context.font = '24px Arial';
         this.context.textAlign = 'center';
-        this.context.fillText('Game Over', WORLD_WIDTH / 2, WORLD_HEIGHT / 2);
+        this.context.fillText('Game Over', this.canvas.width / 2, this.canvas.height / 2);
 
         this.context.fillStyle = 'white';
         this.context.font = '16px Arial';
-        this.context.fillText('Out of fuel', WORLD_WIDTH / 2, WORLD_HEIGHT / 2 + 30);
+        this.context.fillText('Out of fuel', this.canvas.width / 2, this.canvas.height / 2 + 30);
 
         this.context.fillStyle = 'white';
         this.context.font = '16px Arial';
-        this.context.fillText('Press F5 to restart', WORLD_WIDTH / 2, WORLD_HEIGHT / 2 + 60);
+        this.context.fillText('Press F5 to restart', this.canvas.width / 2, this.canvas.height / 2 + 60);
     }
 
 
     renderProgressBar(pos, size, maxValue, value) {
-        const prevFillStyle = ctx.fillStyle;
+        const prevFillStyle = this.context.fillStyle;
         this.context.fillStyle = 'white';
         this.context.fillRect(pos.x, pos.y, size.x, size.y);
 

@@ -1,6 +1,6 @@
 // @ts-nocheck
 
-import { Vector2 } from "./vector2.js";
+import { Vector2 } from "../vector2.js";
 
 export class RoundUiElement {
     constructor(pos, radius, data, type) {
