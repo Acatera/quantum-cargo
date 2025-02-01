@@ -23,6 +23,36 @@ class Vector2 {
     }
 }
 
+class SquareUiElement {
+    constructor(pos, size, data) {
+        this.pos = new Vector2(pos.x, pos.y);
+        this.size = size;
+        this.data = data;
+    }
+
+    isInside(pos){
+        return pos.x >= this.pos.x && pos.x <= this.pos.x + this.size &&
+        pos.y >= this.pos.y && pos.y <= this.pos.y + this.size;
+    }
+}
+
+class RoundUiElement {
+    constructor(pos, radius, data) {
+        this.pos = new Vector2(pos.x, pos.y);
+        this.radius = radius;
+        this.data = data;
+    }
+
+    isInside(pos) {
+        const dx = pos.x - this.pos.x;
+        const dy = pos.y - this.pos.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        return distance <= this.radius;
+    }
+}
+
+const uiElements = [];
+
 const game = {
     screen: {
         offset: new Vector2(0, 0),
@@ -144,6 +174,8 @@ function generateOrbitStations(radius) {
 
         stations.push(station);
 
+        uiElements.push(new RoundUiElement(pos, station.size, station));
+
         stationIndex++;
     }
 }
@@ -186,13 +218,13 @@ function renderStation(station) {
         .scale(game.screen.scale)
         .add(game.screen.offset);
     if (station.hovered) {
-        drawCircle(ctx, scaledPos.x, scaledPos.y, station.size + 3, 'red');
+        drawCircle(ctx, scaledPos.x, scaledPos.y, (station.size + 3) * game.screen.scale, 'red');
     }
 
     if (station.selected) {
-        drawCircle(ctx, scaledPos.x, scaledPos.y, station.size + 3, 'blue');
+        drawCircle(ctx, scaledPos.x, scaledPos.y, (station.size + 3) * game.screen.scale, 'blue');
     }
-    drawCircle(ctx, scaledPos.x, scaledPos.y, station.size, station.color);
+    drawCircle(ctx, scaledPos.x, scaledPos.y, station.size * game.screen.scale, station.color);
 }
 
 function generateSpaceStationName() {
@@ -275,7 +307,7 @@ function findNearestStation(station, stations) {
 function drawLine(ctx, from, to, color) {
     ctx.beginPath();
     ctx.moveTo(game.screen.offset.x + from.x, game.screen.offset.y + from.y);
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 2 * game.screen.scale;
     ctx.lineTo(game.screen.offset.x + to.x, game.screen.offset.y + to.y);
     ctx.strokeStyle = color;
     ctx.stroke();
@@ -336,15 +368,11 @@ document.getElementById('screen').addEventListener('mousemove', function (event)
     const rect = canvas.getBoundingClientRect();
     const mouseX = x - rect.left;
     const mouseY = y - rect.top;
-
-    for (let i = 0; i < stations.length; i++) {
-        const station = stations[i];
-        const scaledPos = station.pos.scale(game.screen.scale);
-        const dx = mouseX - scaledPos.x - game.screen.offset.x;
-        const dy = mouseY - scaledPos.y - game.screen.offset.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance < station.size) {
-            station.hovered = true;
+    const mousePos = new Vector2(mouseX, mouseY);
+    const worldPos = mousePos.sub(game.screen.offset).scale(1 / game.screen.scale);
+    for (let i = 0; i < uiElements.length; i++) {
+        if (uiElements[i].isInside(worldPos)) {
+            uiElements[i].data.hovered = true;
             break;
         }
     }
@@ -368,15 +396,12 @@ document.getElementById('screen').addEventListener('click', function (event) {
     const rect = canvas.getBoundingClientRect();
     const mouseX = x - rect.left;
     const mouseY = y - rect.top;
+    const mousePos = new Vector2(mouseX, mouseY);
+    const worldPos = mousePos.sub(game.screen.offset).scale(1 / game.screen.scale);
 
-    for (let i = 0; i < stations.length; i++) {
-        const station = stations[i];
-        const scaledPos = station.pos.scale(game.screen.scale);
-        const dx = mouseX - scaledPos.x - game.screen.offset.x;
-        const dy = mouseY - scaledPos.y - game.screen.offset.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance < station.size) {
-            station.selected = true;
+    for (let i = 0; i < uiElements.length; i++) {
+        if (uiElements[i].isInside(worldPos)) {
+            uiElements[i].data.selected = !uiElements[i].data.selected;
             break;
         }
     }
@@ -389,16 +414,12 @@ document.getElementById('screen').addEventListener('dblclick', function (event) 
     const rect = canvas.getBoundingClientRect();
     const mouseX = x - rect.left;
     const mouseY = y - rect.top;
+    const mousePos = new Vector2(mouseX, mouseY);
+    const worldPos = mousePos.sub(game.screen.offset).scale(1 / game.screen.scale);
 
-    for (let i = 0; i < stations.length; i++) {
-        const station = stations[i];
-        const scaledPos = station.pos.scale(game.screen.scale);
-        const dx = mouseX - scaledPos.x - game.screen.offset.x;
-        const dy = mouseY - scaledPos.y - game.screen.offset.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance < station.size) {
-            game.player.destination = station;
-            console.log(`Destination set to ${station.name}`);
+    for (let i = 0; i < uiElements.length; i++) {
+        if (uiElements[i].isInside(worldPos)) {
+            game.player.destination = uiElements[i].data;
             break;
         }
     }
@@ -439,6 +460,8 @@ document.getElementById('screen').addEventListener('wheel', function (event) {
     } else if (game.screen.scale > 2) {
         game.screen.scale = 2;
     }
+
+    event.preventDefault();
 });
 
 function renderPlayer(player) {
@@ -451,7 +474,7 @@ function renderPlayer(player) {
     const playerPos = player.location
         .scale(game.screen.scale)
         .add(game.screen.offset);
-    drawCircle(ctx, playerPos.x, playerPos.y, 4, 'red');
+    drawCircle(ctx, playerPos.x, playerPos.y, 4 * game.screen.scale, 'red');
 }
 
 function renderUI() {
