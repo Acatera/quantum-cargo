@@ -470,25 +470,33 @@ function renderPlayer(player) {
     drawCircle(ctx, playerPos.x, playerPos.y, 4 * game.screen.scale, 'red');
 }
 
-function onBuyClick(stationId, itemId) {
-    return function () {
-        const station = stations.find(station => station.id === stationId);
-        const item = station.inventory.items.find(item => item.id === itemId);
-        if (item) {
-            const itemType = Object.values(itemsTypes).find(type => type.id === itemId);
-            if (game.player.credits >= itemType.value) {
-                game.player.credits -= itemType.value;
-                game.player.inventory.add(itemId, 1);
-                station.inventory.remove(itemId, 1);
-            }
-        }
-    };
-}
-
 let selectedStation = null;
 let selectedItemIndex = null;
 
 function renderUI() {
+    if (game.player.ship.fuel <= 0) {
+        // Clear screen
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+
+        // Line one: Game over, line two `Out of fuel`. Line 3: Press F5 to restart
+        // Center text
+
+        ctx.fillStyle = 'red';
+        ctx.font = '24px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Game Over', WORLD_WIDTH / 2, WORLD_HEIGHT / 2);
+        
+        ctx.fillStyle = 'white';
+        ctx.font = '16px Arial';
+        ctx.fillText('Out of fuel', WORLD_WIDTH / 2, WORLD_HEIGHT / 2 + 30);
+        
+        ctx.fillStyle = 'white';
+        ctx.font = '16px Arial';
+        ctx.fillText('Press F5 to restart', WORLD_WIDTH / 2, WORLD_HEIGHT / 2 + 60);
+        return;
+    }
+
     if (selectedStation) {
         ctx.fillStyle = 'white';
         ctx.font = '24px Arial';
@@ -582,6 +590,9 @@ document.addEventListener('keydown', function (event) {
                     game.player.inventory.add(item.id, 1);
                     selectedStation.inventory.remove(item.id, 1);
                 }
+                if (item.quantity <= 0) {
+                    selectedItemIndex = 0;
+                }
             }
             break;
         // S key to sell an item
@@ -650,7 +661,6 @@ function tick(game) {
 generateStations();
 
 render();
-
 
 setInterval(() => {
     tick(game);
