@@ -1,6 +1,10 @@
+// @ts-nocheck
+
 import { RoundUiElement } from "./RoundUiElement.js";
 import { Vector2 } from "./Vector2.js";
-import { Inventory } from "./Inventory.js";
+import { SpaceStation } from "./space-station.js";
+import { Inventory } from "./inventory.js";
+import { itemsTypes } from "./item-types.js";
 
 const SCALE_FACTOR = 0.05;
 
@@ -42,27 +46,6 @@ canvas.height = window.innerHeight;
 
 let WORLD_WIDTH = canvas.width;
 let WORLD_HEIGHT = canvas.height;
-
-const itemsTypes = {
-    ore: {
-        id: 1,
-        name: 'Ore',
-        description: 'A raw material used in manufacturing',
-        value: 10
-    },
-    fuel: {
-        id: 2,
-        name: 'Fuel',
-        description: 'A substance used to power engines',
-        value: 20
-    },
-    food: {
-        id: 3,
-        name: 'Food',
-        description: 'A consumable item for crew members',
-        value: 5
-    }
-};
 
 const devicePixelRatio = 1 / window.devicePixelRatio || 1;
 const ctx = canvas.getContext('2d');
@@ -112,35 +95,12 @@ function generateOrbitStations(radius) {
             continue;
         }
 
-        const station = createStation(pos, generateSpaceStationName(), 5, 'white');
-        const initialInventoryItems = Math.floor(Math.random() * 3) + 1;
-        for (let i = 0; i < initialInventoryItems; i++) {
-
-            let itemCount = Math.floor(Math.random() * 10) + 1;
-            let itemTypesCount = Object.keys(itemsTypes).length;
-            let itemId = Math.floor(Math.random() * itemTypesCount) + 1;
-            station.inventory.add(itemId, itemCount);
-        }
-
+        const station = new SpaceStation(pos);
         stations.push(station);
-
         uiElements.push(new RoundUiElement(pos, station.size, station, 'station'));
 
         stationIndex++;
     }
-}
-
-function createStation(pos, name, size, color) {
-    return {
-        // Guid
-        id: Math.random().toString(36),
-        pos,
-        name,
-        size,
-        color,
-        processed: false,
-        inventory: new Inventory(),
-    };
 }
 
 function renderStation(station) {
@@ -155,38 +115,6 @@ function renderStation(station) {
         drawCircle(ctx, scaledPos.x, scaledPos.y, (station.size + 3) * game.screen.scale, 'blue');
     }
     drawCircle(ctx, scaledPos.x, scaledPos.y, station.size * game.screen.scale, station.color);
-}
-
-function generateSpaceStationName() {
-    const prefixes = [
-        "Lunar", "Neptune", "Vega", "Orion", "Apollo", "Ares", "Zeus",
-        "Quantum", "Nova", "Sol", "Astro", "Titan", "Cosmo", "Celestial"
-    ];
-
-    const coreNames = [
-        "Echo", "Prometheus", "Zenith", "Pioneer", "Horizon", "Eclipse",
-        "Sentinel", "Oasis", "Halcyon", "Odyssey", "Vanguard", "Nebula",
-        "Hyperion", "Exodus", "Genesis", "Oblivion"
-    ];
-
-    const suffixes = [
-        "Station", "Outpost", "Base", "Hub", "Dock", "Port",
-        "Lab", "Observatory", "Array", "Fort", "Bastion", "Forge",
-        "Citadel", "Colony", "Waypoint"
-    ];
-
-    // Generate a random number for potential serial usage
-    const serial = Math.floor(Math.random() * 100) + 1;
-
-    // Randomly select components
-    const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
-    const core = coreNames[Math.floor(Math.random() * coreNames.length)];
-    const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
-
-    // Decide whether to add a serial number (50% chance)
-    const includeSerial = Math.random() > 0.5;
-
-    return includeSerial ? `${prefix} ${core} ${suffix}-${serial}` : `${prefix} ${core} ${suffix}`;
 }
 
 function renderStations() {
@@ -456,11 +384,11 @@ function renderUI() {
         ctx.font = '24px Arial';
         ctx.textAlign = 'center';
         ctx.fillText('Game Over', WORLD_WIDTH / 2, WORLD_HEIGHT / 2);
-        
+
         ctx.fillStyle = 'white';
         ctx.font = '16px Arial';
         ctx.fillText('Out of fuel', WORLD_WIDTH / 2, WORLD_HEIGHT / 2 + 30);
-        
+
         ctx.fillStyle = 'white';
         ctx.font = '16px Arial';
         ctx.fillText('Press F5 to restart', WORLD_WIDTH / 2, WORLD_HEIGHT / 2 + 60);
@@ -577,7 +505,7 @@ document.addEventListener('keydown', function (event) {
                 }
             }
             break;
-        }   
+    }
 });
 
 
