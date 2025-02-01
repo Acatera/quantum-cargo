@@ -1,7 +1,6 @@
 import { RoundUiElement } from "./RoundUiElement.js";
-import { SquareUiElement } from "./SquareUiElement.js";
 import { Vector2 } from "./Vector2.js";
-import { UiButton } from "./UiButton.js";
+import { Inventory } from "./Inventory.js";
 
 const SCALE_FACTOR = 0.05;
 
@@ -13,7 +12,7 @@ const game = {
         scale: 1
     },
     player: {
-        inventory: createInventory(),
+        inventory: new Inventory(),
         credits: 10000,
         location: new Vector2(0, 0),
         destination: null,
@@ -140,33 +139,7 @@ function createStation(pos, name, size, color) {
         size,
         color,
         processed: false,
-        inventory: createInventory(),
-    };
-}
-
-function createInventory() {
-    return {
-        items: [],
-        add(itemId, quantity) {
-            const existingItem = this.items.find(item => item.id === itemId);
-            if (existingItem) {
-                existingItem.quantity += quantity;
-            } else {
-                this.items.push({
-                    id: itemId,
-                    quantity
-                });
-            }
-        },
-        remove(itemId, quantity) {
-            const existingItem = this.items.find(item => item.id === itemId);
-            if (existingItem) {
-                existingItem.quantity -= quantity;
-                if (existingItem.quantity <= 0) {
-                    this.items = this.items.filter(item => item.id !== itemId);
-                }
-            }
-        },
+        inventory: new Inventory(),
     };
 }
 
