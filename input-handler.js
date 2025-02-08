@@ -121,6 +121,9 @@ export class InputHandler {
                     screen.active = new TradingScreen(screen, game.player, game.player.station);
                     event.preventDefault();
                     return;
+                case 'r':
+                    // Use fuel to refuel ship
+                    game.player.refuel();
             }
 
             if (screen.active) {

@@ -24,4 +24,9 @@ export class Inventory {
             }
         }
     }
+
+    count(itemId) {
+        const existingItem = this.items.find(item => item.id === itemId);
+        return existingItem ? existingItem.quantity : 0;
+    }
 }

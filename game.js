@@ -5,9 +5,10 @@ import { itemsTypes } from './item-types.js';
 
 export class Game {
     constructor() {
+        const fuelFillPerUnit = 10;
         this.player = {
             inventory: new Inventory(),
-            credits: 10000,
+            credits: 10,
             location: new Vector2(0, 0),
             destination: null,
             station: null,
@@ -18,6 +19,25 @@ export class Game {
                 fuel: 100,
                 consumption: 1,
                 speed: 5,
+                refuel(amount) {
+                    this.fuel = Math.min(this.maxFuel, this.fuel + amount);
+                }
+            },
+            refuel() {
+                const fuelUsed = this.ship.maxFuel - this.ship.fuel;
+                if (fuelUsed < fuelFillPerUnit) {
+                    console.warn('Did not use enough fuel to refuel');
+                    return;
+                }
+
+                const unitsOfFuelNeeded = Math.ceil(fuelUsed / fuelFillPerUnit);
+                const unitsOfFuelOwned = this.inventory.count(itemsTypes.fuel.id);
+
+                const unitsOfFuelUsed = Math.min(unitsOfFuelNeeded, unitsOfFuelOwned);
+
+                console.info('Refueling with', unitsOfFuelUsed, 'units of fuel');
+                this.ship.refuel(unitsOfFuelUsed * fuelFillPerUnit);
+                this.inventory.remove(itemsTypes.fuel.id, unitsOfFuelUsed);
             }
         };
         this.selectedStation = null;
@@ -27,6 +47,7 @@ export class Game {
         // this.player.station = this.world.stations[0];
         this.player.inventory.add(itemsTypes.food.id, 100);
         this.player.inventory.add(itemsTypes.ore.id, 10);
+        this.player.inventory.add(itemsTypes.fuel.id, 1);
     }
 
     tick() {

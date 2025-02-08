@@ -67,14 +67,12 @@ export class SpaceStation {
     getUnitBuyPrice(itemId) {
         const item = Object.values(itemsTypes).find(item => item.id === itemId);
         const price = Math.round(item.value * this._buyingCoefficient);
-        console.log(`Buying ${item.name} for ${price}`);
         return price;
     }
 
     getUnitSellPrice(itemId) {
         const item = Object.values(itemsTypes).find(item => item.id === itemId);
         const price = Math.round(item.value * this._sellingCoefficient);
-        console.log(`Selling ${item.name} for ${price}`);
         return price;
     }
 }
