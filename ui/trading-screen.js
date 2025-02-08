@@ -114,12 +114,14 @@ export class TradingScreen {
         const panelBackground = 'rgba(0, 120, 100, 1)';
         const fontColor = 'white';
 
+        const bottomPadding = 150;
+
         // Draw left panel
         ctx.fillStyle = panelBackground;
-        ctx.fillRect(0, 75, colWidth, this.screen.height - 100);
+        ctx.fillRect(0, 75, colWidth, this.screen.height - bottomPadding);
 
         if (this.selectedPanel === 'left') {
-            this.drawRect(ctx, 0, 75, colWidth, this.screen.height - 100, 'cyan', 2);
+            this.drawRect(ctx, 0, 75, colWidth, this.screen.height - bottomPadding, 'cyan', 2);
         }
 
         ctx.fillStyle = fontColor;
@@ -132,7 +134,7 @@ export class TradingScreen {
         for (let i = 0; i < this.player.inventory.items.length; i++) {
             const item = this.player.inventory.items[i];
             const itemType = Object.values(itemsTypes).find(type => type.id === item.id);
-            const itemSold = this.itemsSold.find(item => item.id === i);
+            const itemSold = this.itemsSold.find(is => is.id === item.id);
 
             if (this.selectedLeftItemIndex === i) {
                 ctx.fillStyle = 'orange';
@@ -149,10 +151,10 @@ export class TradingScreen {
 
         // Draw right panel
         ctx.fillStyle = panelBackground;
-        ctx.fillRect(colWidth + gap, 75, colWidth, this.screen.height - 100);
+        ctx.fillRect(colWidth + gap, 75, colWidth, this.screen.height - bottomPadding);
 
         if (this.selectedPanel === 'right') {
-            this.drawRect(ctx, colWidth + gap, 75, colWidth, this.screen.height - 100, 'cyan', 2);
+            this.drawRect(ctx, colWidth + gap, 75, colWidth, this.screen.height - bottomPadding, 'cyan', 2);
         }
 
         ctx.fillStyle = fontColor;
@@ -164,7 +166,7 @@ export class TradingScreen {
         // Draw the station's inventory
         for (let i = 0; i < this.station.inventory.items.length; i++) {
             const item = this.station.inventory.items[i];
-            const itemsBought = this.itemsBought.find(item => item.id === i);
+            const itemsBought = this.itemsBought.find(ib => ib.id === item.id);
             const itemType = Object.values(itemsTypes).find(type => type.id === item.id);
 
             if (this.selectedRightItemIndex === i) {
@@ -179,6 +181,12 @@ export class TradingScreen {
                 ctx.fillText(`Buying - ${itemsBought.qty}`, colWidth + gap + colWidth - 100, 100 + i * 30);
             }
         }
+
+        // Render footer
+        ctx.fillStyle = 'white';
+        text = 'Enter - complete transaction; +/- - adjust quantity; Arrow keys - navigate; Esc - close';
+        metrics = ctx.measureText(text);
+        ctx.fillText(text, this.screen.width / 2 - metrics.width / 2, this.screen.height - 50);
     }
 
     handleKeyDown(event) {
@@ -235,21 +243,23 @@ export class TradingScreen {
         // Minus key decrements the quantity of the selected item
         if (event.key === '-') {
             if (this.selectedPanel === 'left') {
-                const item = this.itemsSold.find(item => item.id === this.selectedLeftItemIndex);
-                if (item) {
-                    item.qty--;
-                    if (item.qty <= 0) {
-                        this.itemsSold = this.itemsSold.filter(item => item.id !== this.selectedLeftItemIndex);
+                const selectedItem = this.player.inventory.items[this.selectedLeftItemIndex];
+                const itemSold = this.itemsSold.find(item => item.id === selectedItem.id);
+                if (itemSold) {
+                    itemSold.qty--;
+                    if (itemSold.qty <= 0) {
+                        this.itemsSold = this.itemsSold.filter(item => item.id !== selectedItem.id);
                     }
                 }
             }
 
             if (this.selectedPanel === 'right') {
-                const item = this.itemsBought.find(item => item.id === this.selectedRightItemIndex);
-                if (item) {
-                    item.qty--;
-                    if (item.qty <= 0) {
-                        this.itemsBought = this.itemsBought.filter(item => item.id !== this.selectedRightItemIndex);
+                const selectedItem = this.station.inventory.items[this.selectedRightItemIndex];
+                const itemBought = this.itemsBought.find(item => item.id === selectedItem.id);
+                if (itemBought) {
+                    itemBought.qty--;
+                    if (itemBought.qty <= 0) {
+                        this.itemsBought = this.itemsBought.filter(item => item.id !== selectedItem.id);
                     }
                 }
             }
@@ -258,35 +268,51 @@ export class TradingScreen {
         }
 
         // Plus key increments the quantity of the selected item
-        if (event.key === '=') {
+        if (event.key === '=' || event.key === '+') {
             if (this.selectedPanel === 'left') {
-                const itemSold = this.itemsSold.find(item => item.id === this.selectedLeftItemIndex);
-                const playerItem = this.player.inventory.items[this.selectedLeftItemIndex];
+                const selectedItem = this.player.inventory.items[this.selectedLeftItemIndex];
+                const itemSold = this.itemsSold.find(item => item.id === selectedItem.id);
                 if (itemSold) {
-                    if (itemSold.qty < playerItem.quantity) {
+                    if (itemSold.qty < selectedItem.quantity) {
                         itemSold.qty++;
                     }
                 } else {
-                    this.itemsSold.push({ id: this.selectedLeftItemIndex, qty: 1 });
+                    this.itemsSold.push({ id: selectedItem.id, qty: 1 });
                 }
             }
 
             if (this.selectedPanel === 'right') {
-                const itemBought = this.itemsBought.find(item => item.id === this.selectedRightItemIndex);
-                const stationItem = this.station.inventory.items[this.selectedRightItemIndex];
+                const selectedItem = this.station.inventory.items[this.selectedRightItemIndex];
+                const itemBought = this.itemsBought.find(item => item.id === selectedItem.id);
                 if (itemBought) {
-                    if (itemBought.qty < stationItem.quantity) {
+                    if (itemBought.qty < selectedItem.quantity) {
                         itemBought.qty++;
                     }
                 } else {
-                    this.itemsBought.push({ id: this.selectedRightItemIndex, qty: 1 });
+                    this.itemsBought.push({ id: selectedItem.id, qty: 1 });
                 }
             }
             event.preventDefault();
             return;
         }
 
-        console.log(`Items sold: ${this.itemsSold}`);
-        console.log(`Items bought: ${this.itemsBought}`);
+
+        // Enter key completes the transaction
+        if (event.key === 'Enter') {
+            this.itemsSold.forEach(item => {
+                this.player.inventory.remove(item.id, item.qty);
+                this.station.inventory.add(item.id, item.qty);
+            });
+
+            this.itemsBought.forEach(item => {
+                this.player.inventory.add(item.id, item.qty);
+                this.station.inventory.remove(item.id, item.qty);
+            });
+
+            this.itemsSold = [];
+            this.itemsBought = [];
+            event.preventDefault();
+            return;
+        }
     }
 }
