@@ -131,10 +131,12 @@ export class TradingScreen {
         ctx.fillText(text, (colWidth - metrics.width) / 2, 60);
 
         // Draw the player's inventory
+        let sellProfit = 0;
         for (let i = 0; i < this.player.inventory.items.length; i++) {
             const item = this.player.inventory.items[i];
             const itemType = Object.values(itemsTypes).find(type => type.id === item.id);
             const itemSold = this.itemsSold.find(is => is.id === item.id);
+            sellProfit += (itemSold?.qty || 0) * this.station.getUnitBuyPrice(itemType.id);
 
             if (this.selectedLeftItemIndex === i) {
                 ctx.fillStyle = 'orange';
@@ -148,6 +150,13 @@ export class TradingScreen {
                 ctx.fillText(`Selling - ${itemSold.qty}`, colWidth - 100, 100 + i * 30);
             }
         }
+
+        // Render sell profit
+        ctx.fillStyle = fontColor;
+        text = `Sell Profit: ${sellProfit}`;
+        metrics = ctx.measureText(text);
+        ctx.fillText(text, (colWidth - metrics.width) / 2, this.screen.height - 100);
+
 
         // Draw right panel
         ctx.fillStyle = panelBackground;
@@ -164,10 +173,12 @@ export class TradingScreen {
         ctx.fillText(text, colWidth + gap + (colWidth - metrics.width) / 2, 60);
 
         // Draw the station's inventory
+        let buyCost = 0;
         for (let i = 0; i < this.station.inventory.items.length; i++) {
             const item = this.station.inventory.items[i];
             const itemsBought = this.itemsBought.find(ib => ib.id === item.id);
             const itemType = Object.values(itemsTypes).find(type => type.id === item.id);
+            buyCost += (itemsBought?.qty || 0) * this.station.getUnitSellPrice(itemType.id);
 
             if (this.selectedRightItemIndex === i) {
                 ctx.fillStyle = 'orange';
@@ -181,6 +192,12 @@ export class TradingScreen {
                 ctx.fillText(`Buying - ${itemsBought.qty}`, colWidth + gap + colWidth - 100, 100 + i * 30);
             }
         }
+
+        // Render buy cost
+        ctx.fillStyle = fontColor;
+        text = `Buy Cost: ${buyCost}`;
+        metrics = ctx.measureText(text);
+        ctx.fillText(text, colWidth + gap + (colWidth - metrics.width) / 2, this.screen.height - 100);
 
         // Render footer
         ctx.fillStyle = 'white';
@@ -296,21 +313,26 @@ export class TradingScreen {
             return;
         }
 
-
         // Enter key completes the transaction
         if (event.key === 'Enter') {
             this.itemsSold.forEach(item => {
+                const buyCost = this.station.getUnitBuyPrice(item.id);
+                this.player.credits += buyCost * item.qty;
                 this.player.inventory.remove(item.id, item.qty);
                 this.station.inventory.add(item.id, item.qty);
             });
 
             this.itemsBought.forEach(item => {
+                const sellPrice = this.station.getUnitSellPrice(item.id);
+                this.player.credits -= sellPrice * item.qty;
                 this.player.inventory.add(item.id, item.qty);
                 this.station.inventory.remove(item.id, item.qty);
             });
 
             this.itemsSold = [];
             this.itemsBought = [];
+            this.screen.active = null;
+
             event.preventDefault();
             return;
         }

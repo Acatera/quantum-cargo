@@ -136,7 +136,8 @@ export class Renderer {
 
         this.context.fillStyle = 'white';
         this.context.font = '16px Arial';
-        this.context.fillText(`Credits: ${this.game.player.credits}`, 10, offsetY + 30);
+        // Format credits with thousand separator
+        this.context.fillText(`Credits: ${this.game.player.credits.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`, 10, offsetY + 30);
         this.context.fillText(`Fuel:`, 10, offsetY + 45);
         this.renderProgressBar(new Vector2(50, offsetY + 35), new Vector2(200, 10), this.game.player.ship.maxFuel, this.game.player.ship.fuel);
         this.context.fillText(`Destination: ${this.game.player.destination ? this.game.player.destination.name : 'None'}`, 10, offsetY + 60);

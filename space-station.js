@@ -14,6 +14,8 @@ export class SpaceStation {
         this.inventory = new Inventory();
         this.hovered = false;
         this.selected = false;
+        this._buyingCoefficient = 0.8;
+        this._sellingCoefficient = 1.2;
 
         const initialInventoryItems = Math.floor(Math.random() * 3) + 1;
         for (let i = 0; i < initialInventoryItems; i++) {
@@ -60,5 +62,19 @@ export class SpaceStation {
     isHovered(mousePos) {
         const distance = this.pos.sub(mousePos).magnitude();
         return distance < this.size;
+    }
+
+    getUnitBuyPrice(itemId) {
+        const item = Object.values(itemsTypes).find(item => item.id === itemId);
+        const price = Math.round(item.value * this._buyingCoefficient);
+        console.log(`Buying ${item.name} for ${price}`);
+        return price;
+    }
+
+    getUnitSellPrice(itemId) {
+        const item = Object.values(itemsTypes).find(item => item.id === itemId);
+        const price = Math.round(item.value * this._sellingCoefficient);
+        console.log(`Selling ${item.name} for ${price}`);
+        return price;
     }
 }
