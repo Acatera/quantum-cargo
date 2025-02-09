@@ -16,6 +16,7 @@ export class SpaceStation {
         this.selected = false;
         this._buyingCoefficient = 0.8;
         this._sellingCoefficient = 1.2;
+        this._itemPrices = [];
 
         const initialInventoryItems = Math.floor(Math.random() * 3) + 1;
         for (let i = 0; i < initialInventoryItems; i++) {
@@ -24,6 +25,11 @@ export class SpaceStation {
             let itemTypesCount = Object.keys(itemsTypes).length;
             let itemId = Math.floor(Math.random() * itemTypesCount) + 1;
             this.inventory.add(itemId, itemCount);
+        }
+
+        for (let i = 0; i < Object.keys(itemsTypes).length; i++) {
+            const item = Object.values(itemsTypes)[i];
+            this._itemPrices[item.id] = item.value;
         }
     }
 
@@ -65,14 +71,29 @@ export class SpaceStation {
     }
 
     getUnitBuyPrice(itemId) {
-        const item = Object.values(itemsTypes).find(item => item.id === itemId);
-        const price = Math.round(item.value * this._buyingCoefficient);
+        const price = Math.round(this._itemPrices[itemId] * this._buyingCoefficient);
         return price;
     }
 
     getUnitSellPrice(itemId) {
-        const item = Object.values(itemsTypes).find(item => item.id === itemId);
-        const price = Math.round(item.value * this._sellingCoefficient);
+        const price = Math.round(this._itemPrices[itemId] * this._sellingCoefficient);
         return price;
+    }
+
+    tick() {
+        for (let i = 0; i < Object.keys(itemsTypes).length; i++) {
+            if (Math.random() * 1000 * 60 < 1) {
+                const item = Object.values(itemsTypes)[i];
+                const delta = Math.random() * 0.5 - 0.25;
+                const newPrice = Math.round(this._itemPrices[item.id] * (1 + delta));
+                
+                if (this._itemPrices[item.id] === newPrice) {
+                    continue;
+                }
+
+                console.log(`Price of ${item.name} at ${this.name} changed from ${this._itemPrices[item.id]} to ${Math.round(newPrice)}`);
+                this._itemPrices[item.id] = Math.round(newPrice);
+            }
+        }
     }
 }

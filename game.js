@@ -78,5 +78,8 @@ export class Game {
                 this.player.ship.fuel -= this.player.ship.consumption;
             }
         }
+
+        // Tick the world
+        this.world.tick();
     }
 }

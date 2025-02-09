@@ -124,6 +124,34 @@ export class InputHandler {
                 case 'r':
                     // Use fuel to refuel ship
                     game.player.refuel();
+                    event.preventDefault();
+                    return;
+
+                // Left bracket cycles selected station backwards
+                case '[':
+                    if (!game.selectedStation) {
+                        game.selectedStation = game.world.stations[game.world.stations.length - 1];
+                    }
+
+                    let si1 = game.world.stations.indexOf(game.selectedStation);
+                    si1 = (si1 - 1 + game.world.stations.length) % game.world.stations.length;
+                    game.selectedStation = game.world.stations[si1];
+                    event.preventDefault();
+                    return;
+
+                // Right bracket cycles selected station forwards
+                case ']':
+                    if (!game.selectedStation) {
+                        game.selectedStation = game.world.stations[0];
+                    }
+
+                    let si2 = game.world.stations.indexOf(game.selectedStation);
+                    si2 = (si2 + 1) % game.world.stations.length;
+                    game.selectedStation = game.world.stations[si2];
+                    event.preventDefault();
+                    return;
+
+
             }
 
             if (screen.active) {

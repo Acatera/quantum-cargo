@@ -147,20 +147,20 @@ export class Renderer {
     renderEndGameScreen() {
         // Clear screen
         this.context.fillStyle = 'black';
-        this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.context.fillRect(0, 0, this.screen.width, this.screen.height);
 
         this.context.fillStyle = 'red';
         this.context.font = '24px Arial';
         this.context.textAlign = 'center';
-        this.context.fillText('Game Over', this.canvas.width / 2, this.canvas.height / 2);
+        this.context.fillText('Game Over', this.screen.width / 2, this.screen.height / 2);
 
         this.context.fillStyle = 'white';
         this.context.font = '16px Arial';
-        this.context.fillText('Out of fuel', this.canvas.width / 2, this.canvas.height / 2 + 30);
+        this.context.fillText('Out of fuel', this.screen.width / 2, this.screen.height / 2 + 30);
 
         this.context.fillStyle = 'white';
         this.context.font = '16px Arial';
-        this.context.fillText('Press F5 to restart', this.canvas.width / 2, this.canvas.height / 2 + 60);
+        this.context.fillText('Press F5 to restart', this.screen.width / 2, this.screen.height / 2 + 60);
     }
 
 

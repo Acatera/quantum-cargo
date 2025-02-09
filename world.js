@@ -60,4 +60,10 @@ export class World {
             stationIndex++;
         }
     }
+
+    tick() {
+        for (let i = 0; i < this.stations.length; i++) {
+            this.stations[i].tick();
+        }
+    }
 }
