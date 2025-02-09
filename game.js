@@ -8,7 +8,7 @@ export class Game {
         const fuelFillPerUnit = 10;
         this.player = {
             inventory: new Inventory(),
-            credits: 10,
+            credits: 10000000,
             location: new Vector2(0, 0),
             destination: null,
             station: null,

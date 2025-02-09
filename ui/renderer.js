@@ -129,7 +129,7 @@ export class Renderer {
     }
 
     renderPlayerUI(player) {
-        const offsetY = this.screen.height - 100;
+        const offsetY = this.screen.height - 30;
         //Fill with white, 50% alpha
         this.context.fillStyle = 'rgba(64, 64, 64, 0.8)';
         this.context.fillRect(0, offsetY, this.screen.width, 100);
@@ -137,11 +137,12 @@ export class Renderer {
         this.context.fillStyle = 'white';
         this.context.font = '16px Arial';
         // Format credits with thousand separator
-        this.context.fillText(`Credits: ${this.game.player.credits.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`, 10, offsetY + 30);
-        this.context.fillText(`Fuel:`, 10, offsetY + 45);
-        this.renderProgressBar(new Vector2(50, offsetY + 35), new Vector2(200, 10), this.game.player.ship.maxFuel, this.game.player.ship.fuel);
-        this.context.fillText(`Destination: ${this.game.player.destination ? this.game.player.destination.name : 'None'}`, 10, offsetY + 60);
-        this.context.fillText(`Station: ${this.game.player.station ? this.game.player.station.name : 'None'}`, 10, offsetY + 75);
+        this.context.fillText(`Credits:`, 10, offsetY + 20);
+        this.context.fillText(`${this.game.player.credits.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`, 80, offsetY + 20);
+        this.context.fillText(`Fuel:`, 180, offsetY + 20);
+        this.renderProgressBar(new Vector2(220, offsetY + 10), new Vector2(200, 10), this.game.player.ship.maxFuel, this.game.player.ship.fuel);
+        this.context.fillText(`Destination: ${this.game.player.destination ? this.game.player.destination.name : 'None'}`, 450, offsetY + 20);
+        this.context.fillText(`Station: ${this.game.player.station ? this.game.player.station.name : 'None'}`, 710, offsetY + 20);
     }
 
     renderEndGameScreen() {
