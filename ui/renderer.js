@@ -100,6 +100,8 @@ export class Renderer {
             this.renderStationUI(this.game.selectedStation);
         }
 
+        this.renderEvents(this.game.events);
+
         this.renderPlayerUI(this.game.player);
     }
 
@@ -143,6 +145,21 @@ export class Renderer {
         this.renderProgressBar(new Vector2(220, offsetY + 10), new Vector2(200, 10), this.game.player.ship.maxFuel, this.game.player.ship.fuel);
         this.context.fillText(`Destination: ${this.game.player.destination ? this.game.player.destination.name : 'None'}`, 450, offsetY + 20);
         this.context.fillText(`Station: ${this.game.player.station ? this.game.player.station.name : 'None'}`, 710, offsetY + 20);
+    }
+
+    renderEvents(events) {
+        const offsetY = this.screen.height - 185;
+        //
+        this.context.fillStyle = 'rgba(64, 64, 64, 0.8)';
+        this.context.fillRect(0, offsetY, this.screen.width, 185);
+
+        this.context.fillStyle = 'white';
+        this.context.font = '12px Arial';
+
+        for (let i = 0; i < events.length; i++) {
+            this.context.fillText(events[i], 5, offsetY + 15 + i * 15);
+        }
+
     }
 
     renderEndGameScreen() {

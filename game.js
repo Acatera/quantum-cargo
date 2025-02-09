@@ -42,7 +42,15 @@ export class Game {
         };
         this.selectedStation = null;
         this.selectedItemIndex = null;
-        this.world = new World(600, 600);
+        this.world = new World(600, 600, this);
+        this.events = [];
+        // Add twelve more events
+        this.addEvent('Welcome to the game!');
+        // for (let i = 0; i < 12; i++) {
+        //     this.addEvent(`This is vent number ${i}`);
+        // }
+
+
 
         // this.player.station = this.world.stations[0];
         this.player.inventory.add(itemsTypes.food.id, 100);
@@ -81,5 +89,13 @@ export class Game {
 
         // Tick the world
         this.world.tick();
+    }
+
+    addEvent(event) {
+        if (this.events.length >= 10) {
+            this.events.shift();
+        }
+
+        this.events.push(event);
     }
 }

@@ -4,10 +4,11 @@ import { Inventory } from './inventory.js';
 import { itemsTypes } from './item-types.js';
 
 export class SpaceStation {
-    constructor(pos, name, size = 5, color = 'white') {
+    constructor(pos, world, size = 5, color = 'white') {
         this.id = Math.random().toString(36);
         this.pos = pos;
-        this.name = name || this._generateSpaceStationName();
+        this.name = this._generateSpaceStationName();
+        this.world = world;
         this.size = size;
         this.color = color;
         this.processed = false;
@@ -92,6 +93,7 @@ export class SpaceStation {
                 }
 
                 console.log(`Price of ${item.name} at ${this.name} changed from ${this._itemPrices[item.id]} to ${Math.round(newPrice)}`);
+                this.world.game.addEvent(`Price of ${item.name} at ${this.name} changed from ${this._itemPrices[item.id]} to ${Math.round(newPrice)}`);
                 this._itemPrices[item.id] = Math.round(newPrice);
             }
         }

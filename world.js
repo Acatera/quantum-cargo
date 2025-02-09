@@ -2,9 +2,10 @@ import { Vector2 } from './vector2.js';
 import { SpaceStation } from './space-station.js';
 
 export class World {
-    constructor(width, height) {
+    constructor(width, height, game) {
         this.width = width;
         this.height = height;
+        this.game = game;
         this.stations = [];
 
         this.generateStations();
@@ -54,7 +55,7 @@ export class World {
                 continue;
             }
 
-            const station = new SpaceStation(pos);
+            const station = new SpaceStation(pos, this);
             this.stations.push(station);
 
             stationIndex++;
